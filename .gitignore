@@ -1,0 +1,5 @@
+udf_scanner.cpp
+udf_parser.tab.h
+udf_parser.tab.cpp
+udf
+*.o
