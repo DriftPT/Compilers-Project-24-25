@@ -175,12 +175,8 @@ void udf::type_checker::do_print_node(udf::print_node *const node, int lvl) {
 
 //---------------------------------------------------------------------------
 
-void udf::type_checker::do_read_node(udf::read_node *const node, int lvl) {
-  try {
-    node->argument()->accept(this, lvl);
-  } catch (const std::string &id) {
-    throw "undeclared variable '" + id + "'";
-  }
+void udf::type_checker::do_input_node(udf::input_node *const node, int lvl) {
+  //TODO: node->type(cdk::primitive_type::create(0, cdk::TYPE_UNSPEC));
 }
 
 //---------------------------------------------------------------------------

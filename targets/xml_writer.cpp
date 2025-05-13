@@ -159,10 +159,9 @@ void udf::xml_writer::do_print_node(udf::print_node * const node, int lvl) {
 
 //---------------------------------------------------------------------------
 
-void udf::xml_writer::do_read_node(udf::read_node * const node, int lvl) {
-  ASSERT_SAFE_EXPRESSIONS;
+void udf::xml_writer::do_input_node(udf::input_node * const node, int lvl) {
+  ASSERT_SAFE_EXPRESSIONS;// TODO: is this necessary?
   openTag(node, lvl);
-  node->argument()->accept(this, lvl + 2);
   closeTag(node, lvl);
 }
 

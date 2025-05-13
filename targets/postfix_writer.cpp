@@ -242,12 +242,10 @@ void udf::postfix_writer::do_print_node(udf::print_node * const node, int lvl) {
 
 //---------------------------------------------------------------------------
 
-void udf::postfix_writer::do_read_node(udf::read_node * const node, int lvl) {
+void udf::postfix_writer::do_input_node(udf::input_node * const node, int lvl) {
   ASSERT_SAFE_EXPRESSIONS;
   _pf.CALL("readi");
   _pf.LDFVAL32();
-  node->argument()->accept(this, lvl);
-  _pf.STINT();
 }
 
 //---------------------------------------------------------------------------

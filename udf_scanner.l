@@ -27,7 +27,7 @@
 "else"                 return tELSE; 
 "write"                return tWRITE;   
 "writeln"              return tWRITELN;  
-"read"                 return tREAD; 
+"input"                return tINPUT;
 "begin"                return tBEGIN; 
 "end"                  return tEND; 
 
