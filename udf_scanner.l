@@ -25,7 +25,8 @@
 "for"                  return tFOR; 
 "if"                   return tIF; 
 "else"                 return tELSE; 
-"print"                return tPRINT; 
+"write"                return tWRITE;   
+"writeln"              return tWRITELN;  
 "read"                 return tREAD; 
 "begin"                return tBEGIN; 
 "end"                  return tEND; 

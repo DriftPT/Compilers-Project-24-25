@@ -153,7 +153,7 @@ void udf::xml_writer::do_evaluation_node(udf::evaluation_node * const node, int 
 void udf::xml_writer::do_print_node(udf::print_node * const node, int lvl) {
   ASSERT_SAFE_EXPRESSIONS;
   openTag(node, lvl);
-  node->argument()->accept(this, lvl + 2);
+  node->arguments()->accept(this, lvl + 2);
   closeTag(node, lvl);
 }
 
@@ -169,6 +169,8 @@ void udf::xml_writer::do_read_node(udf::read_node * const node, int lvl) {
 //---------------------------------------------------------------------------
 
 void udf::xml_writer::do_for_node(udf::for_node * const node, int lvl) {
+  /*
+  TODO
   ASSERT_SAFE_EXPRESSIONS;
   openTag(node, lvl);
   openTag("init", lvl + 2);
@@ -184,6 +186,7 @@ void udf::xml_writer::do_for_node(udf::for_node * const node, int lvl) {
   node->block()->accept(this, lvl + 4);
   closeTag("block", lvl + 2);
   closeTag(node, lvl);
+  */
 }
 
 //---------------------------------------------------------------------------

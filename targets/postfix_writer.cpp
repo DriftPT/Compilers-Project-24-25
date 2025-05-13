@@ -218,18 +218,26 @@ void udf::postfix_writer::do_evaluation_node(udf::evaluation_node * const node, 
 
 void udf::postfix_writer::do_print_node(udf::print_node * const node, int lvl) {
   ASSERT_SAFE_EXPRESSIONS;
-  node->argument()->accept(this, lvl); // determine the value to print
-  if (node->argument()->is_typed(cdk::TYPE_INT)) {
-    _pf.CALL("printi");
-    _pf.TRASH(4); // delete the printed value
-  } else if (node->argument()->is_typed(cdk::TYPE_STRING)) {
-    _pf.CALL("prints");
-    _pf.TRASH(4); // delete the printed value's address
-  } else {
-    std::cerr << "ERROR: CANNOT HAPPEN!" << std::endl;
-    exit(1);
+
+  for (size_t i = 0; i < node->arguments()->size(); ++i) {
+    auto child = dynamic_cast<cdk::expression_node *>(node->arguments()->node(i));
+
+    child->accept(this, lvl); // expression to print
+    if (child->is_typed(cdk::TYPE_INT)) {
+      _pf.CALL("printi");
+      _pf.TRASH(4); // delete the printed value
+    } else if (child->is_typed(cdk::TYPE_STRING)) {
+      _pf.CALL("prints");
+      _pf.TRASH(4); // delete the printed value's address
+    } else {
+      std::cerr << "ERROR: CANNOT HAPPEN!" << std::endl;
+      exit(1);
+    }
   }
-  _pf.CALL("println"); // print a newline
+
+  if (node->newline()) {
+    _pf.CALL("println"); // print a newline
+  }
 }
 
 //---------------------------------------------------------------------------
@@ -245,6 +253,8 @@ void udf::postfix_writer::do_read_node(udf::read_node * const node, int lvl) {
 //---------------------------------------------------------------------------
 
 void udf::postfix_writer::do_for_node(udf::for_node * const node, int lvl) {
+  /*
+  TODO
   ASSERT_SAFE_EXPRESSIONS;
   int lbl1, lbl2, lbl3;
   node->init()->accept(this, lvl);
@@ -256,6 +266,7 @@ void udf::postfix_writer::do_for_node(udf::for_node * const node, int lvl) {
   node->increment()->accept(this, lvl);
   _pf.JMP(mklbl(lbl1));
   _pf.LABEL(mklbl(lbl2));
+  */
 }
 
 //---------------------------------------------------------------------------

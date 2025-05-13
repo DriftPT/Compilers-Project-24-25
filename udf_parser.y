@@ -34,7 +34,7 @@
 
 %token <i> tINTEGER
 %token <s> tIDENTIFIER tSTRING
-%token tFOR tIF tPRINT tREAD tBEGIN tEND
+%token tFOR tIF tWRITE tWRITELN tREAD tBEGIN tEND
 
 %nonassoc tIFX
 %nonassoc tELSE
@@ -46,7 +46,7 @@
 %nonassoc tUNARY
 
 %type <node> stmt program
-%type <sequence> stmts
+%type <sequence> stmts exprs
 %type <expression> expr
 %type <lvalue> lval
 
@@ -63,7 +63,8 @@ stmts : stmt       { $$ = new cdk::sequence_node(LINE, $1); }
       ;
 
 stmt : expr ';'                         { $$ = new udf::evaluation_node(LINE, $1); }
-     | tPRINT expr ';'                  { $$ = new udf::print_node(LINE, $2); }
+     | tWRITE exprs                     { $$ = new udf::print_node(LINE, $2, false); }
+     | tWRITELN exprs                   { $$ = new udf::print_node(LINE, $2, true); }
      | tREAD lval ';'                   { $$ = new udf::read_node(LINE, $2); }
      | tFOR '(' expr ';' expr ';' expr ')' stmt         { $$ = new udf::for_node(LINE, $3, $5, $7, $9); }
      | tIF '(' expr ')' stmt %prec tIFX { $$ = new udf::if_node(LINE, $3, $5); }
@@ -89,6 +90,10 @@ expr : tINTEGER              { $$ = new cdk::integer_node(LINE, $1); }
      | '(' expr ')'          { $$ = $2; }
      | lval                  { $$ = new cdk::rvalue_node(LINE, $1); }
      | lval '=' expr         { $$ = new cdk::assignment_node(LINE, $1, $3); }
+     ;
+
+exprs : expr                 { $$ = new cdk::sequence_node(LINE, $1); }
+     | exprs expr            { $$ = new cdk::sequence_node(LINE, $2, $1); }
      ;
 
 lval : tIDENTIFIER             { $$ = new cdk::variable_node(LINE, $1); }
