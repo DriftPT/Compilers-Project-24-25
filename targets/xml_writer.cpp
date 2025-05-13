@@ -214,3 +214,13 @@ void udf::xml_writer::do_if_else_node(udf::if_else_node * const node, int lvl) {
   closeTag("else", lvl + 2);
   closeTag(node, lvl);
 }
+
+//----------------------------------------------------------------------------------
+
+void udf::xml_writer::do_sizeof_node(udf::sizeof_node * const node, int lvl) {
+  // TODO
+}
+
+void udf::xml_writer::do_nullptr_node(udf::nullptr_node * const node, int lvl) {
+  // TODO
+}

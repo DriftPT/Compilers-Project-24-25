@@ -282,3 +282,13 @@ void udf::postfix_writer::do_if_else_node(udf::if_else_node * const node, int lv
   node->elseblock()->accept(this, lvl + 2);
   _pf.LABEL(mklbl(lbl1 = lbl2));
 }
+
+//---------------------------------------------------------------------------
+
+void udf::postfix_writer::do_sizeof_node(udf::sizeof_node * const node, int lvl) {
+  //TODO
+}
+
+void udf::postfix_writer::do_nullptr_node(udf::nullptr_node * const node, int lvl) {
+  //TODO
+}
