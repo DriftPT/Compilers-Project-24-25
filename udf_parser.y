@@ -35,6 +35,7 @@
 %token <i> tINTEGER
 %token <s> tIDENTIFIER tSTRING
 %token tFOR tIF tWRITE tWRITELN tINPUT tBEGIN tEND
+%token tBREAK tCONTINUE tRETURN
 
 %nonassoc tIFX
 %nonassoc tELSE

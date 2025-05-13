@@ -188,6 +188,26 @@ void udf::xml_writer::do_for_node(udf::for_node * const node, int lvl) {
   */
 }
 
+void udf::xml_writer::do_break_node(udf::break_node * const node, int lvl) {
+  ASSERT_SAFE_EXPRESSIONS; // TODO: is this necessary?
+  openTag(node, lvl);
+  closeTag(node, lvl);
+}
+void udf::xml_writer::do_continue_node(udf::continue_node * const node, int lvl) {
+  ASSERT_SAFE_EXPRESSIONS; // TODO: is this necessary?
+  openTag(node, lvl);
+  closeTag(node, lvl);
+}
+
+void udf::xml_writer::do_return_node(udf::return_node * const node, int lvl) {
+  /*TODO:
+  ASSERT_SAFE_EXPRESSIONS;
+  openTag(node, lvl);
+  if (node->retval()) node->retval()->accept(this, lvl + 4);
+  closeTag(node, lvl);
+  */
+}
+
 //---------------------------------------------------------------------------
 
 void udf::xml_writer::do_if_node(udf::if_node * const node, int lvl) {

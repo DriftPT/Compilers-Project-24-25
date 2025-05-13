@@ -267,6 +267,30 @@ void udf::postfix_writer::do_for_node(udf::for_node * const node, int lvl) {
   */
 }
 
+void udf::postfix_writer::do_break_node(udf::break_node *const node, int lvl) {
+  /*
+  TODO:
+  if (_forIni.size() != 0) {
+    _pf.JMP(mklbl(_forEnd.top())); // jump to for end
+  } else
+    error(node->lineno(), "'break' outside 'for'");
+  */
+}
+
+void udf::postfix_writer::do_continue_node(udf::continue_node *const node, int lvl) {
+  /*
+  TODO:
+  if (_forIni.size() != 0) {
+    _pf.JMP(mklbl(_forStep.top())); // jump to next cycle
+  } else
+    error(node->lineno(), "'restart' outside 'for'");
+  */
+}
+
+void udf::postfix_writer::do_return_node(udf::return_node *const node, int lvl) {
+  // TODO
+}
+
 //---------------------------------------------------------------------------
 
 void udf::postfix_writer::do_if_node(udf::if_node * const node, int lvl) {

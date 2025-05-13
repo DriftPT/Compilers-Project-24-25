@@ -14,15 +14,9 @@ namespace udf {
     }
 
   public:
-    cdk::sequence_node *instructions() {
-      return _instructions;
-    }
-    cdk::sequence_node *declarations() {
-      return _declarations;
-    }
+    cdk::sequence_node *instructions() { return _instructions; }
+    cdk::sequence_node *declarations() { return _declarations; }
 
-    void accept(basic_ast_visitor *sp, int level) {
-      sp->do_block_node(this, level);
-    }
+    void accept(basic_ast_visitor *sp, int level) { sp->do_block_node(this, level); }
   };
 } // udf

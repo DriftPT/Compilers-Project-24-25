@@ -30,6 +30,9 @@
 "input"                return tINPUT;
 "begin"                return tBEGIN; 
 "end"                  return tEND; 
+"break"                return tBREAK;
+"continue"             return tCONTINUE;
+"return"               return tRETURN;
 
 [A-Za-z][A-Za-z0-9_]*  yylval.s = new std::string(yytext); return tIDENTIFIER;
 

@@ -190,6 +190,16 @@ void udf::type_checker::do_for_node(udf::for_node *const node, int lvl) {
   */
 }
 
+void udf::type_checker::do_break_node(udf::break_node *const node, int lvl) {
+  // TODO
+}
+void udf::type_checker::do_continue_node(udf::continue_node *const node, int lvl) {
+  // TODO
+}
+void udf::type_checker::do_return_node(udf::return_node *const node, int lvl) {
+  // TODO
+}
+
 //---------------------------------------------------------------------------
 
 void udf::type_checker::do_if_node(udf::if_node *const node, int lvl) {
