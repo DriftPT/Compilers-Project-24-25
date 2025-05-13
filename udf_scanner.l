@@ -22,7 +22,7 @@
 "=="                   return tEQ; 
 "!="                   return tNE; 
 
-"while"                return tWHILE; 
+"for"                  return tFOR; 
 "if"                   return tIF; 
 "else"                 return tELSE; 
 "print"                return tPRINT; 

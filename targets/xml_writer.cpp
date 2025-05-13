@@ -33,6 +33,10 @@ void udf::xml_writer::do_sequence_node(cdk::sequence_node * const node, int lvl)
   closeTag(node, lvl);
 }
 
+void udf::xml_writer::do_block_node(udf::block_node * const node, int lvl) {
+  // TODO
+}
+
 //---------------------------------------------------------------------------
 
 void udf::xml_writer::do_integer_node(cdk::integer_node * const node, int lvl) {
@@ -164,12 +168,18 @@ void udf::xml_writer::do_read_node(udf::read_node * const node, int lvl) {
 
 //---------------------------------------------------------------------------
 
-void udf::xml_writer::do_while_node(udf::while_node * const node, int lvl) {
+void udf::xml_writer::do_for_node(udf::for_node * const node, int lvl) {
   ASSERT_SAFE_EXPRESSIONS;
   openTag(node, lvl);
+  openTag("init", lvl + 2);
+  node->init()->accept(this, lvl + 4);
+  closeTag("init", lvl + 2);
   openTag("condition", lvl + 2);
   node->condition()->accept(this, lvl + 4);
   closeTag("condition", lvl + 2);
+  openTag("increment", lvl + 2);
+  node->increment()->accept(this, lvl + 4);
+  closeTag("increment", lvl + 2);
   openTag("block", lvl + 2);
   node->block()->accept(this, lvl + 4);
   closeTag("block", lvl + 2);

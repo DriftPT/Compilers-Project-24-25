@@ -33,6 +33,10 @@ void udf::postfix_writer::do_sequence_node(cdk::sequence_node * const node, int 
   }
 }
 
+void udf::postfix_writer::do_block_node(udf::block_node *const node, int lvl) {
+  // TODO
+}
+
 //---------------------------------------------------------------------------
 
 void udf::postfix_writer::do_integer_node(cdk::integer_node * const node, int lvl) {
@@ -240,13 +244,16 @@ void udf::postfix_writer::do_read_node(udf::read_node * const node, int lvl) {
 
 //---------------------------------------------------------------------------
 
-void udf::postfix_writer::do_while_node(udf::while_node * const node, int lvl) {
+void udf::postfix_writer::do_for_node(udf::for_node * const node, int lvl) {
   ASSERT_SAFE_EXPRESSIONS;
-  int lbl1, lbl2;
+  int lbl1, lbl2, lbl3;
+  node->init()->accept(this, lvl);
   _pf.LABEL(mklbl(lbl1 = ++_lbl));
   node->condition()->accept(this, lvl);
   _pf.JZ(mklbl(lbl2 = ++_lbl));
   node->block()->accept(this, lvl + 2);
+  _pf.LABEL(mklbl(lbl3 = ++_lbl));
+  node->increment()->accept(this, lvl);
   _pf.JMP(mklbl(lbl1));
   _pf.LABEL(mklbl(lbl2));
 }

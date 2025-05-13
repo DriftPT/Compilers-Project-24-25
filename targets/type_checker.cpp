@@ -11,6 +11,10 @@ void udf::type_checker::do_sequence_node(cdk::sequence_node *const node, int lvl
   // EMPTY
 }
 
+void udf::type_checker::do_block_node(udf::block_node *const node, int lvl) {
+  // TODO
+}
+
 //---------------------------------------------------------------------------
 
 void udf::type_checker::do_nil_node(cdk::nil_node *const node, int lvl) {
@@ -181,8 +185,10 @@ void udf::type_checker::do_read_node(udf::read_node *const node, int lvl) {
 
 //---------------------------------------------------------------------------
 
-void udf::type_checker::do_while_node(udf::while_node *const node, int lvl) {
+void udf::type_checker::do_for_node(udf::for_node *const node, int lvl) {
+  node->init()->accept(this, lvl + 4);
   node->condition()->accept(this, lvl + 4);
+  node->increment()->accept(this, lvl + 4);
 }
 
 //---------------------------------------------------------------------------

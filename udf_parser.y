@@ -34,7 +34,7 @@
 
 %token <i> tINTEGER
 %token <s> tIDENTIFIER tSTRING
-%token tWHILE tIF tPRINT tREAD tBEGIN tEND
+%token tFOR tIF tPRINT tREAD tBEGIN tEND
 
 %nonassoc tIFX
 %nonassoc tELSE
@@ -65,7 +65,7 @@ stmts : stmt       { $$ = new cdk::sequence_node(LINE, $1); }
 stmt : expr ';'                         { $$ = new udf::evaluation_node(LINE, $1); }
      | tPRINT expr ';'                  { $$ = new udf::print_node(LINE, $2); }
      | tREAD lval ';'                   { $$ = new udf::read_node(LINE, $2); }
-     | tWHILE '(' expr ')' stmt         { $$ = new udf::while_node(LINE, $3, $5); }
+     | tFOR '(' expr ';' expr ';' expr ')' stmt         { $$ = new udf::for_node(LINE, $3, $5, $7, $9); }
      | tIF '(' expr ')' stmt %prec tIFX { $$ = new udf::if_node(LINE, $3, $5); }
      | tIF '(' expr ')' stmt tELSE stmt { $$ = new udf::if_else_node(LINE, $3, $5, $7); }
      | '{' stmts '}'                    { $$ = $2; }
