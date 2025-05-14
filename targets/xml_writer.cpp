@@ -270,3 +270,7 @@ void udf::xml_writer::do_function_definition_node(udf::function_definition_node 
 void udf::xml_writer::do_function_declaration_node(udf::function_declaration_node * const node, int lvl) {
   // TODO
 }
+
+void udf::xml_writer::do_variable_declaration_node(udf::variable_declaration_node * const node, int lvl) {
+  // TODO
+}

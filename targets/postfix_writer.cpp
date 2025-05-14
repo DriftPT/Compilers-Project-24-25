@@ -350,3 +350,6 @@ void udf::postfix_writer::do_function_declaration_node(udf::function_declaration
   //TODO
 }
 
+void udf::postfix_writer::do_variable_declaration_node(udf::variable_declaration_node * const node, int lvl) {
+  //TODO
+}

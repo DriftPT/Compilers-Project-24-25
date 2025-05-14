@@ -243,3 +243,7 @@ void udf::type_checker::do_function_definition_node(udf::function_definition_nod
 void udf::type_checker::do_function_declaration_node(udf::function_declaration_node *const node, int lvl) {
   // TODO
 }
+
+void udf::type_checker::do_variable_declaration_node(udf::variable_declaration_node *const node, int lvl) {
+  // TODO
+}
