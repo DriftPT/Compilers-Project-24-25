@@ -15,7 +15,7 @@ namespace udf {
     variable_declaration_node(int lineno, int qualifier, std::shared_ptr<cdk::basic_type> varType, const std::string &identifier,
                               cdk::expression_node *initializer) :
         cdk::typed_node(lineno), _qualifier(qualifier), _identifier(identifier), _initializer(initializer) {
-      cdk::typed_node::type(type_var);
+      cdk::typed_node::type(varType);
     }
 
   public:
