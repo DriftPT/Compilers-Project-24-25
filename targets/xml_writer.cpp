@@ -181,9 +181,9 @@ void udf::xml_writer::do_for_node(udf::for_node * const node, int lvl) {
   openTag("increment", lvl + 2);
   node->increment()->accept(this, lvl + 4);
   closeTag("increment", lvl + 2);
-  openTag("block", lvl + 2);
-  node->block()->accept(this, lvl + 4);
-  closeTag("block", lvl + 2);
+  openTag("instruction", lvl + 2);
+  node->instruction()->accept(this, lvl + 4);
+  closeTag("instruction", lvl + 2);
   closeTag(node, lvl);
   */
 }

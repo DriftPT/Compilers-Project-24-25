@@ -259,7 +259,7 @@ void udf::postfix_writer::do_for_node(udf::for_node * const node, int lvl) {
   _pf.LABEL(mklbl(lbl1 = ++_lbl));
   node->condition()->accept(this, lvl);
   _pf.JZ(mklbl(lbl2 = ++_lbl));
-  node->block()->accept(this, lvl + 2);
+  node->instruction()->accept(this, lvl + 2);
   _pf.LABEL(mklbl(lbl3 = ++_lbl));
   node->increment()->accept(this, lvl);
   _pf.JMP(mklbl(lbl1));
