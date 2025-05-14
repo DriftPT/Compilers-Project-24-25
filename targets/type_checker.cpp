@@ -219,3 +219,15 @@ void udf::type_checker::do_sizeof_node(udf::sizeof_node *const node, int lvl) {
 void udf::type_checker::do_nullptr_node(udf::nullptr_node *const node, int lvl) {
   // TODO
 }
+
+void udf::type_checker::do_address_of_node(udf::address_of_node *const node, int lvl) {
+  // TODO
+}
+
+void udf::type_checker::do_index_node(udf::index_node *const node, int lvl) {
+  // TODO
+}
+
+void udf::type_checker::do_objects_alloc_node(udf::objects_alloc_node *const node, int lvl) {
+  // TODO
+}
