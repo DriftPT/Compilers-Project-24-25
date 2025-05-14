@@ -4,6 +4,9 @@
 
 namespace udf {
 
+  /**
+   * Class for describing nullptr nodes.
+   */
   class sizeof_node: public cdk::expression_node {
     cdk::expression_node *_expression;
 
@@ -12,9 +15,7 @@ namespace udf {
         cdk::expression_node(lineno), _expression(expression) {
     }
 
-    void accept(basic_ast_visitor *sp, int level) {
-      sp->do_sizeof_node(this, level);
-    }
+    void accept(basic_ast_visitor *sp, int level) { sp->do_sizeof_node(this, level); }
 
   };
 

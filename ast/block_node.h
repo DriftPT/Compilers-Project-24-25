@@ -1,9 +1,13 @@
 #pragma once
 
+#include <cdk/ast/basic_node.h>
 #include <cdk/ast/sequence_node.h>
 
 namespace udf {
 
+  /**
+   * Class for describing block nodes.
+   */
   class block_node: public cdk::basic_node {
     cdk::sequence_node *_instructions;
     cdk::sequence_node *_declarations;

@@ -3,7 +3,10 @@
 #include <cdk/ast/basic_node.h>
 
 namespace udf {
-
+  
+  /**
+   * Class for describing break nodes.
+   */
   class break_node: public cdk::basic_node {
     int _depth;
 

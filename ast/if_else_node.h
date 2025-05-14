@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cdk/ast/basic_node.h>
 #include <cdk/ast/expression_node.h>
 
 namespace udf {

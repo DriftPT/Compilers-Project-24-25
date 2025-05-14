@@ -3,7 +3,10 @@
 #include <cdk/ast/basic_node.h>
 
 namespace udf {
-
+  
+  /**
+   * Class for describing continue nodes.
+   */
   class continue_node: public cdk::basic_node {
     int _depth;
 
