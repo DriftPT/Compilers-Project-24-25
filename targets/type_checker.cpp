@@ -231,3 +231,15 @@ void udf::type_checker::do_index_node(udf::index_node *const node, int lvl) {
 void udf::type_checker::do_objects_alloc_node(udf::objects_alloc_node *const node, int lvl) {
   // TODO
 }
+
+void udf::type_checker::do_function_call_node(udf::function_call_node *const node, int lvl) {
+  // TODO
+}
+
+void udf::type_checker::do_function_definition_node(udf::function_definition_node *const node, int lvl) {
+  // TODO
+}
+
+void udf::type_checker::do_function_declaration_node(udf::function_declaration_node *const node, int lvl) {
+  // TODO
+}
