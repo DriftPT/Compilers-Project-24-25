@@ -15,6 +15,8 @@ namespace udf {
         cdk::expression_node(lineno), _expression(expression) {
     }
 
+    cdk::expression_node *expression() { return _expression; }
+    
     void accept(basic_ast_visitor *sp, int level) { sp->do_sizeof_node(this, level); }
 
   };

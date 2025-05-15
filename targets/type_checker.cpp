@@ -263,3 +263,19 @@ void udf::type_checker::do_tensor_rank_node(udf::tensor_rank_node *const node, i
 void udf::type_checker::do_tensor_literal_node(udf::tensor_literal_node *const node, int lvl) {
   // TODO
 }
+
+void udf::type_checker::do_tensor_contraction_node(udf::tensor_contraction_node *const node, int lvl) {
+  // TODO
+}
+
+void udf::type_checker::do_tensor_capacity_node(udf::tensor_capacity_node *const node, int lvl) {
+  // TODO
+}
+
+void udf::type_checker::do_tensor_dim_node(udf::tensor_dim_node *const node, int lvl) {
+  // TODO
+}
+
+void udf::type_checker::do_tensor_dims_node(udf::tensor_dims_node *const node, int lvl) {
+  // TODO
+}

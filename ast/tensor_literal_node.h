@@ -14,7 +14,7 @@ namespace udf {
 
   public:
     tensor_literal_node(int lineno, cdk::sequence_node *values) :
-        cdk::sequence_node(lineno), _values(values) {
+        cdk::expression_node(lineno), _values(values) {
     }
 
     cdk::sequence_node *values() const { return _values; }
