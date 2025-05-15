@@ -256,7 +256,7 @@ void udf::type_checker::do_tensor_rank_node(udf::tensor_rank_node *const node, i
   // TODO
 }
 
-void udf::type_checker::do_tensor_literal_node(udf::tensor_literal_node *const node, int lvl) {
+void udf::type_checker::do_tensor_node(udf::tensor_node *const node, int lvl) {
   // TODO
 }
 

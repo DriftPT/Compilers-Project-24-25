@@ -367,7 +367,7 @@ void udf::postfix_writer::do_tensor_rank_node(udf::tensor_rank_node * const node
   //TODO
 }
 
-void udf::postfix_writer::do_tensor_literal_node(udf::tensor_literal_node * const node, int lvl) {
+void udf::postfix_writer::do_tensor_node(udf::tensor_node * const node, int lvl) {
   //TODO
 }
 

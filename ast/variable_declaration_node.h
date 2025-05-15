@@ -6,6 +6,9 @@
 
 namespace udf {
 
+  /**
+   * Class for describing variable declaration nodes.
+   */
   class variable_declaration_node: public cdk::typed_node {
     int _qualifier;
     std::string _identifier;
@@ -18,20 +21,13 @@ namespace udf {
       cdk::typed_node::type(varType);
     }
 
-  public:
-    int qualifier() {
-      return _qualifier;
-    }
-    const std::string& identifier() const {
-      return _identifier;
-    }
-    cdk::expression_node* initializer() {
-      return _initializer;
-    }
+    int qualifier() { return _qualifier; }
 
-    void accept(basic_ast_visitor *sp, int level) {
-      sp->do_variable_declaration_node(this, level);
-    }
+    const std::string& identifier() const { return _identifier; }
+
+    cdk::expression_node* initializer() { return _initializer; }
+
+    void accept(basic_ast_visitor *sp, int level) { sp->do_variable_declaration_node(this, level); }
 
   };
 
