@@ -247,3 +247,19 @@ void udf::type_checker::do_function_declaration_node(udf::function_declaration_n
 void udf::type_checker::do_variable_declaration_node(udf::variable_declaration_node *const node, int lvl) {
   // TODO
 }
+
+void udf::type_checker::do_tensor_reshape_node(udf::tensor_reshape_node *const node, int lvl) {
+  // TODO
+}
+
+void udf::type_checker::do_tensor_index_node(udf::tensor_index_node *const node, int lvl) {
+  // TODO
+}
+
+void udf::type_checker::do_tensor_rank_node(udf::tensor_rank_node *const node, int lvl) {
+  // TODO
+}
+
+void udf::type_checker::do_tensor_literal_node(udf::tensor_literal_node *const node, int lvl) {
+  // TODO
+}
