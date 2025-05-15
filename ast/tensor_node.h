@@ -5,10 +5,9 @@
 
 namespace udf {
     
-    /**
-     * Class for describing tensor literal nodes.
-     */
-
+  /**
+   * Class for describing tensor literal nodes.
+   */
   class tensor_node : public cdk::expression_node {
     cdk::sequence_node *_values;
 
@@ -19,8 +18,6 @@ namespace udf {
 
     cdk::sequence_node *values() const { return _values; }
 
-    void accept(basic_ast_visitor *sp, int level) {
-      sp->do_tensor_node(this, level);
-    }
+    void accept(basic_ast_visitor *sp, int level) { sp->do_tensor_node(this, level); }
   };
 } // udf

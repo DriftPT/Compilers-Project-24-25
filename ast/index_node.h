@@ -20,7 +20,7 @@ namespace udf {
     cdk::expression_node* ptr() { return _ptr; }
     cdk::expression_node* index() {return _index; }
 
-    void accept(basic_ast_visitor *sp, int level) { sp->do_index_node(this, level);}
+    void accept(basic_ast_visitor *sp, int level) { sp->do_index_node(this, level); }
 
   };
 

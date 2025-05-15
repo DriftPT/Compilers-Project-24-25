@@ -21,8 +21,7 @@ class tensor_reshape_node : public cdk::expression_node {
     cdk::expression_node *tensor() const { return _tensor; }
     cdk::sequence_node *dimensions() const { return _dimensions; }
 
-    void accept(basic_ast_visitor *sp, int level) {
-      sp->do_tensor_reshape_node(this, level);
-    }
+    void accept(basic_ast_visitor *sp, int level) { sp->do_tensor_reshape_node(this, level); }
+    
   }; 
 } // udf

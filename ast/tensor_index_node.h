@@ -5,10 +5,9 @@
 
 namespace udf {
 
-  /**
-   * Class for describing tensor index nodes.
-   */
-
+/**
+ * Class for describing tensor index nodes.
+ */
 class tensor_index_node : public cdk::expression_node {
     cdk::expression_node *_tensor;
     cdk::sequence_node *_indexes;
@@ -21,8 +20,7 @@ class tensor_index_node : public cdk::expression_node {
     cdk::expression_node *tensor() const { return _tensor; }
     cdk::sequence_node *indexes() const { return _indexes; }
 
-    void accept(basic_ast_visitor *sp, int level) {
-      sp->do_tensor_index_node(this, level);
-    }
+    void accept(basic_ast_visitor *sp, int level) { sp->do_tensor_index_node(this, level); }
+    
   }; 
 } // udf

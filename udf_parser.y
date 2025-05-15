@@ -64,8 +64,8 @@ stmts : stmt       { $$ = new cdk::sequence_node(LINE, $1); }
       ;
 
 stmt : expr ';'                                     { $$ = new udf::evaluation_node(LINE, $1); }
-     | tWRITE exprs                                 { $$ = new udf::print_node(LINE, $2, false); }
-     | tWRITELN exprs                               { $$ = new udf::print_node(LINE, $2, true); }
+     | tWRITE exprs ';'                             { $$ = new udf::print_node(LINE, $2, false); }
+     | tWRITELN exprs ';'                           { $$ = new udf::print_node(LINE, $2, true); }
      | tFOR '(' exprs ';' exprs ';' exprs ')' stmt  { $$ = new udf::for_node(LINE, $3, $5, $7, $9); }
      | tIF '(' expr ')' stmt %prec tIFX             { $$ = new udf::if_node(LINE, $3, $5); }
      | tIF '(' expr ')' stmt tELSE stmt             { $$ = new udf::if_else_node(LINE, $3, $5, $7); }
@@ -94,8 +94,8 @@ expr : tINTEGER              { $$ = new cdk::integer_node(LINE, $1); }
      ;
 
 exprs : expr                 { $$ = new cdk::sequence_node(LINE, $1); }
-     | exprs expr            { $$ = new cdk::sequence_node(LINE, $2, $1); }
-     ;
+      | exprs ',' expr       { $$ = new cdk::sequence_node(LINE, $3, $1); }
+      ;
 
 lval : tIDENTIFIER             { $$ = new cdk::variable_node(LINE, $1); }
      ;
