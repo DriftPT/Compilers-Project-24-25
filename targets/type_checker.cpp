@@ -161,10 +161,6 @@ void udf::type_checker::do_assignment_node(cdk::assignment_node *const node, int
 
 //---------------------------------------------------------------------------
 
-void udf::type_checker::do_program_node(udf::program_node *const node, int lvl) {
-  // EMPTY
-}
-
 void udf::type_checker::do_evaluation_node(udf::evaluation_node *const node, int lvl) {
   node->argument()->accept(this, lvl + 2);
 }

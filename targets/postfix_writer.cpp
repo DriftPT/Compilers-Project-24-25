@@ -173,6 +173,7 @@ void udf::postfix_writer::do_assignment_node(cdk::assignment_node * const node, 
 
 //---------------------------------------------------------------------------
 
+/*
 void udf::postfix_writer::do_program_node(udf::program_node * const node, int lvl) {
   // Note that UDF doesn't have functions. Thus, it doesn't need
   // a function node. However, it must start in the main function.
@@ -200,7 +201,7 @@ void udf::postfix_writer::do_program_node(udf::program_node * const node, int lv
   _pf.EXTERN("prints");
   _pf.EXTERN("println");
 }
-
+*/
 //---------------------------------------------------------------------------
 
 void udf::postfix_writer::do_evaluation_node(udf::evaluation_node * const node, int lvl) {
