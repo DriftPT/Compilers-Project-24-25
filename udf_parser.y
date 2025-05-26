@@ -25,20 +25,54 @@
   //-- don't change *any* of these --- END!
 
   int                   i;          /* integer value */
+  double                d;          /* double value */
   std::string          *s;          /* symbol name or string literal */
+
   cdk::basic_node      *node;       /* node pointer */
   cdk::sequence_node   *sequence;
   cdk::expression_node *expression; /* expression nodes */
   cdk::lvalue_node     *lvalue;
+
+  udf::block_node      *block;
+  std::vector<std::string> *ids;
 };
 
-%token <i> tINTEGER
-%token <s> tIDENTIFIER tSTRING
-%token tFOR tIF tWRITE tWRITELN tINPUT tBEGIN tEND
+%token tAND tOR tNE tLE tGE tSIZEOF tOBJECTS //tOBJECTS?
+%token tINPUT tWRITE tWRITELN
+%token tPUBLIC tPRIVATE tFORWARD
+%token tTYPE_STRING tTYPE_INT tTYPE_REAL tTYPE_POINTER tTYPE_AUTO tTYPE_VOID tTYPE_TENSOR
+%token tIF tELIF tELSE
+%token tFOR
 %token tBREAK tCONTINUE tRETURN
 
-%nonassoc tIFX
-%nonassoc tELSE
+%token <i> tINTEGER
+%token <d> tREAL
+%token <s> tIDENTIFIER tSTRING
+%token <expression> tNULLPTR
+
+/*%type <node> stmt //program
+%type <sequence> stmts exprs
+%type <expression> expr
+%type <lvalue> lval*/
+
+//TODO: NOT FINISHED TYPES
+%type<node> instruction return iffalse
+%type<sequence> file instructions opt_instructions 
+%type<sequence> expressions opt_expressions
+%type<expression> expression integer real opt_initializer
+%type<lvalue> lvalue
+%type<block> block
+
+%type<node>     declaration  argdec  fordec  vardec fundec fundef
+%type<sequence> declarations argdecs fordecs vardecs opt_vardecs
+%type<node>     opt_forinit
+
+%type<s> string
+%type<type> data_type void_type
+%type<ids> identifiers
+
+%nonassoc tIF
+%nonassoc tELIF tELSE
 
 %right '='
 %left tGE tLE tEQ tNE '>' '<'
@@ -46,24 +80,32 @@
 %left '*' '/' '%'
 %nonassoc tUNARY
 
-%type <node> stmt //program
-%type <sequence> stmts exprs
-%type <expression> expr
-%type <lvalue> lval
+
 
 %{
 //-- The rules below will be included in yyparse, the main parsing function.
 %}
 %%
 
-//program : tBEGIN stmts tEND { compiler->ast(new udf::program_node(LINE, $2)); }
-//        ;
 
-stmts : stmt       { $$ = new cdk::sequence_node(LINE, $1); }
-      | stmts stmt { $$ = new cdk::sequence_node(LINE, $2, $1); }
-      ;
+file         : /* empty */  { compiler->ast($$ = new cdk::sequence_node(LINE)); }
+             | declarations { compiler->ast($$ = $1); }
+             ;
 
-stmt : expr ';'                                     { $$ = new udf::evaluation_node(LINE, $1); }
+declarations :              declaration { $$ = new cdk::sequence_node(LINE, $1);     }
+             | declarations declaration { $$ = new cdk::sequence_node(LINE, $2, $1); }
+             ;
+
+declaration  : vardec ';' { $$ = $1; }
+             | fundec     { $$ = $1; }
+             | fundef     { $$ = $1; }
+             ;
+
+vardec       : tFORWARD data_type  tID                         { $$ = new og::variable_declaration_node(LINE, tPUBLIC,  $2, *$3, nullptr); }
+             | tPUBLIC  data_type  tID         opt_initializer { $$ = new og::variable_declaration_node(LINE, tPUBLIC,  $2, *$3, $4); }
+             |          data_type  tID         opt_initializer { $$ = new og::variable_declaration_node(LINE, tPRIVATE, $1, *$2, $3); }
+             ; 
+/*stmt : expr ';'                                     { $$ = new udf::evaluation_node(LINE, $1); }
      | tWRITE exprs ';'                             { $$ = new udf::print_node(LINE, $2, false); }
      | tWRITELN exprs ';'                           { $$ = new udf::print_node(LINE, $2, true); }
      | tFOR '(' exprs ';' exprs ';' exprs ')' stmt  { $$ = new udf::for_node(LINE, $3, $5, $7, $9); }
@@ -99,5 +141,5 @@ exprs : expr                 { $$ = new cdk::sequence_node(LINE, $1); }
 
 lval : tIDENTIFIER             { $$ = new cdk::variable_node(LINE, $1); }
      ;
-
+*/
 %%
