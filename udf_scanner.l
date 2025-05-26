@@ -119,7 +119,7 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]])*
   /* ====[                3.7 - Identificadores (nomes)               ]==== */
   /* ====================================================================== */
 
-{IDENTIFIER}  yylval.s = new std::string(yytext); return tID;
+{IDENTIFIER}  yylval.s = new std::string(yytext); return tIDENTIFIER;
 
   /* ====================================================================== */
   /* ====[              3.8.3 - Cadeias de caracteres                 ]==== */
