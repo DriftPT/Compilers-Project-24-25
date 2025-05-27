@@ -61,8 +61,8 @@
 //TODO: NOT FINISHED TYPES
 %type<node> instruction return iffalse 
 %type<sequence> file instructions opt_instructions 
-%type<sequence> expressions opt_expressions dims
-%type<expression> expression integer real opt_initializer dim
+%type<sequence> expressions opt_expressions //dims
+%type<expression> expression integer real opt_initializer //dim
 %type<lvalue> lvalue
 %type<block> block
 
@@ -72,16 +72,19 @@
 
 %type<s> string
 %type<type> data_type void_type
-%type<ids> identifiers
 
 %nonassoc tIF
 %nonassoc tELIF tELSE
 
 %right '='
-%left tGE tLE tEQ tNE '>' '<'
+%left tOR
+%left tAND
+%right '~'
+%left tNE tEQ
+%left '<' tLE tGE '>'
 %left '+' '-'
 %left '*' '/' '%'
-%nonassoc tUNARY
+%right tUMINUS
 
 
 %{
@@ -116,24 +119,25 @@ vardecs      : vardec ';'          { $$ = new cdk::sequence_node(LINE, $1);     
              | vardecs vardec ';'  { $$ = new cdk::sequence_node(LINE, $2, $1); }
              ;
 
-identifiers  : tIDENTIFIER                   { $$ = new std::vector<std::string>(); $$->push_back(*$1); delete $1; }
-	        | identifiers ',' tIDENTIFIER   { $$ = $1; $$->push_back(*$3); delete $3; }
-             ;
 
 data_type    : tTYPE_STRING                     { $$ = cdk::primitive_type::create(4, cdk::TYPE_STRING);  }
              | tTYPE_INT                        { $$ = cdk::primitive_type::create(4, cdk::TYPE_INT);     }
              | tTYPE_REAL                       { $$ = cdk::primitive_type::create(8, cdk::TYPE_DOUBLE);  }
-             | tTYPE_TENSOR '<' dims '>'        { $$ = new udf::tensor_node(LINE, $3) }//TODO: IDK
+              /*| tTYPE_TENSOR '<' dims '>'        { $$ = cdk::reference_type::create(4, $3); }//TODO: IDK*/
              | tTYPE_POINTER '<' data_type '>'  { $$ = cdk::reference_type::create(4, $3); }
              | tTYPE_POINTER '<' tTYPE_AUTO '>' { $$ = cdk::reference_type::create(4, nullptr); }
              ;
 
-dims        : dim                  { $$ = new cdk::sequence_node(LINE, $1); }
+opt_initializer  : /* empty */         { $$ = nullptr; /* must be nullptr, not NIL */ }
+                 | '=' expression      { $$ = $2; }
+                 ;
+
+/*dims        : dim                  { $$ = new cdk::sequence_node(LINE, $1); }
             | dims ',' dim         { $$ = new cdk::sequence_node(LINE, $3, $1); }
             ;
 
 dim         : tINTEGER             { $$ = $1; }
-            ;
+            ;*/
 
 void_type   : tTYPE_VOID { $$ = cdk::primitive_type::create(0, cdk::TYPE_VOID);   }
             ;
@@ -180,12 +184,16 @@ opt_forinit     : /* empty */     { $$ = new cdk::sequence_node(LINE, NIL); }
                 ;
 
 return          : tRETURN             ';' { $$ = new udf::return_node(LINE, nullptr); }
-                | tRETURN expression  ';' { $$ = new udf::return_node(LINE, new udf::tuple_node(LINE, $2)); }
+                | tRETURN expression  ';' { $$ = new udf::return_node(LINE, $2); }
                 ;
 
 opt_instructions  : /* empty */  { $$ = new cdk::sequence_node(LINE); }
                   | instructions { $$ = $1; }
                   ;
+
+instructions    : instruction                { $$ = new cdk::sequence_node(LINE, $1);     }
+                | instructions instruction   { $$ = new cdk::sequence_node(LINE, $2, $1); }
+                ;
 
 instruction     : tIF '(' expression ')' instruction                                            { $$ = new udf::if_node(LINE, $3, $5); }
                 | tIF '(' expression ')' instruction iffalse                                    { $$ = new udf::if_else_node(LINE, $3, $5, $6); }
@@ -204,6 +212,65 @@ iffalse         : tELSE instruction                               { $$ = $2; }
                 | tELIF '(' expression ')' instruction iffalse    { $$ = new udf::if_else_node(LINE, $3, $5, $6); }
                 ;
 
+opt_expressions : /* empty */         { $$ = new cdk::sequence_node(LINE); }
+                | expressions         { $$ = $1; }
+                ;
+
+expressions     : expression                     { $$ = new cdk::sequence_node(LINE, $1);     }
+                | expressions ',' expression     { $$ = new cdk::sequence_node(LINE, $3, $1); }
+                ;
+
+
+expression      : integer                       { $$ = $1; }
+                | real                          { $$ = $1; }
+                | string                        { $$ = new cdk::string_node(LINE, $1); }
+                | tNULLPTR                      { $$ = new udf::nullptr_node(LINE); }
+                /* LEFT VALUES */
+                | lvalue                        { $$ = new cdk::rvalue_node(LINE, $1); }
+                /* ASSIGNMENTS */
+                | lvalue '=' expression         { $$ = new cdk::assignment_node(LINE, $1, $3); }
+                /* ARITHMETIC EXPRESSIONS */
+                | expression '+' expression    { $$ = new cdk::add_node(LINE, $1, $3); }
+                | expression '-' expression    { $$ = new cdk::sub_node(LINE, $1, $3); }
+                | expression '*' expression    { $$ = new cdk::mul_node(LINE, $1, $3); }
+                | expression '/' expression    { $$ = new cdk::div_node(LINE, $1, $3); }
+                | expression '%' expression    { $$ = new cdk::mod_node(LINE, $1, $3); }
+                /* LOGICAL EXPRESSIONS */
+                | expression  '<' expression    { $$ = new cdk::lt_node(LINE, $1, $3); }
+                | expression tLE  expression    { $$ = new cdk::le_node(LINE, $1, $3); }
+                | expression tEQ  expression    { $$ = new cdk::eq_node(LINE, $1, $3); }
+                | expression tGE  expression    { $$ = new cdk::ge_node(LINE, $1, $3); }
+                | expression  '>' expression    { $$ = new cdk::gt_node(LINE, $1, $3); }
+                | expression tNE  expression    { $$ = new cdk::ne_node(LINE, $1, $3); }
+                /* LOGICAL EXPRESSIONS */
+                | expression tAND  expression    { $$ = new cdk::and_node(LINE, $1, $3); }
+                | expression tOR   expression    { $$ = new cdk::or_node (LINE, $1, $3); }
+                /* UNARY EXPRESSION */
+                | '-' expression %prec tUMINUS  { $$ = new cdk::unary_minus_node(LINE, $2); }
+                | '+' expression %prec tUMINUS  { $$ = $2; }
+                | '~' expression                { $$ = new cdk::not_node(LINE, $2); }
+                /* OTHER EXPRESSION */
+                | tINPUT                        { $$ = new udf::input_node(LINE); }
+                /* OTHER EXPRESSION */
+                | tIDENTIFIER '(' opt_expressions ')'   { $$ = new udf::function_call_node(LINE, *$1, $3); delete $1; }
+                | tSIZEOF '(' expression ')'   { $$ = new udf::sizeof_node(LINE, $3); }
+                /* OTHER EXPRESSION */
+                | '(' expression ')'            { $$ = $2; }
+                | tOBJECTS '(' expression ')'            { $$ = new udf::objects_alloc_node(LINE, $3); }
+                | lvalue '?'                    { $$ = new udf::address_of_node(LINE, $1); }
+                ;
+
+lvalue          : tIDENTIFIER                                            { $$ = new cdk::variable_node(LINE, *$1); delete $1; }
+                | lvalue             '[' expression ']'          { $$ = new udf::index_node(LINE, new cdk::rvalue_node(LINE, $1), $3); }
+                | '(' expression ')' '[' expression ']'          { $$ = new udf::index_node(LINE, $2, $5); }
+                | tIDENTIFIER '(' opt_expressions ')' '[' expression ']' { $$ = new udf::index_node(LINE, new udf::function_call_node(LINE, *$1, $3), $6); }
+                ;
+
+integer         : tINTEGER                      { $$ = new cdk::integer_node(LINE, $1); };
+real            : tREAL                         { $$ = new cdk::double_node(LINE, $1); };
+string          : tSTRING                       { $$ = $1; }
+                | string tSTRING                { $$ = $1; $$->append(*$2); delete $2; }
+                ;
 /*stmt : expr ';'                                     { $$ = new udf::evaluation_node(LINE, $1); }
      | tWRITE exprs ';'                             { $$ = new udf::print_node(LINE, $2, false); }
      | tWRITELN exprs ';'                           { $$ = new udf::print_node(LINE, $2, true); }

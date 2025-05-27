@@ -22,8 +22,8 @@ namespace udf {
       type(cdk::primitive_type::create(0, cdk::TYPE_VOID));
     }
 
-    function_declaration_node(int lineno, int qualifier, const std::string &identifier, cdk::sequence_node *arguments,
-                              std::shared_ptr<cdk::basic_type> return_type) :
+    function_declaration_node(int lineno, int qualifier, std::shared_ptr<cdk::basic_type> return_type, const std::string &identifier,
+       cdk::sequence_node *arguments) :
         cdk::typed_node(lineno), _qualifier(qualifier), _identifier(identifier), _arguments(arguments) {
       type(return_type);
     }

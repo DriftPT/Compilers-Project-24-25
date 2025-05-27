@@ -3,11 +3,18 @@
 %{ 
 // make relevant includes before including the parser's tab file
 #include <string>
+#include <vector>
+#include <sstream>
 #include <cdk/ast/sequence_node.h>
 #include <cdk/ast/expression_node.h>
 #include <cdk/ast/lvalue_node.h>
 #include "ast/tensor_node.h"
 #include "udf_parser.tab.h"
+
+static std::vector<int> deferred;  // deferred tokens
+
+// output stream for building string literals
+static std::ostringstream strlit;
 
 // don't change this
 #define yyerror LexerError
@@ -95,7 +102,7 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]])*
 
 "input"                return tINPUT;
 "nullptr"              return tNULLPTR;
-"objects"              return tObjects;
+"objects"              return tOBJECTS;
 "sizeof"               return tSIZEOF;
 
   /* ====================================================================== */
