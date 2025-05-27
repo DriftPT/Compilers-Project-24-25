@@ -52,7 +52,6 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]])*
 "tensor"                 return tTYPE_TENSOR;
 "ptr"                    return tTYPE_POINTER;
 "void"                   return tTYPE_VOID;
-[<>]                     return *yytext;
 
   /* ====================================================================== */
   /* ====[                  4.5 - Símbolos globais                    ]==== */
@@ -80,19 +79,22 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]])*
 "for"                   return tFOR;
 "break"                 return tBREAK;
 "continue"              return tCONTINUE;
-
-[#\[\](){};:!,]         return *yytext;
 "return"                return tRETURN;
 "write"                 return tWRITE;
 "writeln"               return tWRITELN;
+
+  /* ====================================================================== */
+  /* ====[                 Operadores especiais                       ]==== */
+  /* ====================================================================== */
+
+[()\[\]{},;:]         return *yytext;
 
   /* ====================================================================== */
   /* ====[                 7 - Operadores de expressões               ]==== */
   /* ====[                 7 - Expressões especiais                   ]==== */
   /* ====================================================================== */
 
-[\[\](),?]             return *yytext;
-[-+*/%~<>@?=]          return *yytext;
+[-+*/%~<>@?!=]         return *yytext;
 "=="                   return tEQ;
 "!="                   return tNE;
 "<="                   return tLE;
