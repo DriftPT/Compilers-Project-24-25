@@ -68,7 +68,7 @@
 
 %type<node>     declaration  argdec  fordec  vardec fundec fundef
 %type<sequence> declarations argdecs fordecs vardecs opt_vardecs
-%type<node>     opt_forinit
+%type<sequence> opt_forinit
 
 %type<s> string
 %type<type> data_type void_type
@@ -271,41 +271,5 @@ real            : tREAL                         { $$ = new cdk::double_node(LINE
 string          : tSTRING                       { $$ = $1; }
                 | string tSTRING                { $$ = $1; $$->append(*$2); delete $2; }
                 ;
-/*stmt : expr ';'                                     { $$ = new udf::evaluation_node(LINE, $1); }
-     | tWRITE exprs ';'                             { $$ = new udf::print_node(LINE, $2, false); }
-     | tWRITELN exprs ';'                           { $$ = new udf::print_node(LINE, $2, true); }
-     | tFOR '(' exprs ';' exprs ';' exprs ')' stmt  { $$ = new udf::for_node(LINE, $3, $5, $7, $9); }
-     | tIF '(' expr ')' stmt %prec tIFX             { $$ = new udf::if_node(LINE, $3, $5); }
-     | tIF '(' expr ')' stmt tELSE stmt             { $$ = new udf::if_else_node(LINE, $3, $5, $7); }
-     | '{' stmts '}'                                { $$ = $2; }
-     ;
 
-expr : tINTEGER              { $$ = new cdk::integer_node(LINE, $1); }
-     | tSTRING               { $$ = new cdk::string_node(LINE, $1); }
-     | tINPUT                { $$ = new udf::input_node(LINE); }
-     | '-' expr %prec tUNARY { $$ = new cdk::unary_minus_node(LINE, $2); }
-     | '+' expr %prec tUNARY { $$ = new cdk::unary_plus_node(LINE, $2); }
-     | expr '+' expr         { $$ = new cdk::add_node(LINE, $1, $3); }
-     | expr '-' expr         { $$ = new cdk::sub_node(LINE, $1, $3); }
-     | expr '*' expr         { $$ = new cdk::mul_node(LINE, $1, $3); }
-     | expr '/' expr         { $$ = new cdk::div_node(LINE, $1, $3); }
-     | expr '%' expr         { $$ = new cdk::mod_node(LINE, $1, $3); }
-     | expr '<' expr         { $$ = new cdk::lt_node(LINE, $1, $3); }
-     | expr '>' expr         { $$ = new cdk::gt_node(LINE, $1, $3); }
-     | expr tGE expr         { $$ = new cdk::ge_node(LINE, $1, $3); }
-     | expr tLE expr         { $$ = new cdk::le_node(LINE, $1, $3); }
-     | expr tNE expr         { $$ = new cdk::ne_node(LINE, $1, $3); }
-     | expr tEQ expr         { $$ = new cdk::eq_node(LINE, $1, $3); }
-     | '(' expr ')'          { $$ = $2; }
-     | lval                  { $$ = new cdk::rvalue_node(LINE, $1); }
-     | lval '=' expr         { $$ = new cdk::assignment_node(LINE, $1, $3); }
-     ;
-
-exprs : expr                 { $$ = new cdk::sequence_node(LINE, $1); }
-      | exprs ',' expr       { $$ = new cdk::sequence_node(LINE, $3, $1); }
-      ;
-
-lval : tIDENTIFIER             { $$ = new cdk::variable_node(LINE, $1); }
-     ;
-*/
 %%

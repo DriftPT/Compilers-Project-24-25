@@ -12,7 +12,7 @@ namespace udf {
     cdk::sequence_node *_init;
     cdk::sequence_node *_condition;
     cdk::sequence_node *_increment;
-    cdk::basic_node *_instruction;;
+    cdk::basic_node *_instruction;
 
   public:
     for_node(int lineno, cdk::sequence_node *init, cdk::sequence_node *condition,
