@@ -2,6 +2,16 @@
 #include "targets/xml_writer.h"
 #include "targets/type_checker.h"
 #include ".auto/all_nodes.h"  // automatically generated
+// must come after other #includes
+#include "udf_parser.tab.h"
+
+static std::string qualifier_name(int qualifier) {
+  if (qualifier == tPUBLIC) return "public";
+  if (qualifier == tPRIVATE)
+    return "private";
+  else
+    return "unknown qualifier";
+}
 
 //---------------------------------------------------------------------------
 
@@ -15,7 +25,7 @@ void udf::xml_writer::do_nil_node(cdk::nil_node * const node, int lvl) {
 }
 
 void udf::xml_writer::do_not_node(cdk::not_node * const node, int lvl) {
-  do_binary_operation(node, lvl);
+  do_unary_operation(node, lvl);
 }
 void udf::xml_writer::do_and_node(cdk::and_node * const node, int lvl) {
   do_binary_operation(node, lvl);
