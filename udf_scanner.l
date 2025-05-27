@@ -101,6 +101,7 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]])*
 ">="                   return tGE;
 "&&"                   return tAND;
 "||"                   return tOR;
+"**"                   return tCONTRACT; 
 
 "input"                return tINPUT;
 "nullptr"              return tNULLPTR;
