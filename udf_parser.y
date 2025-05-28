@@ -75,6 +75,8 @@ static std::vector<size_t> convert_sequence_to_vector(cdk::sequence_node *seq) {
 %type<sequence> declarations argdecs fordecs vardecs opt_vardecs
 %type<sequence> opt_forinit
 
+%type<tensor> tensor_literal
+%type<sequence> tensor_elements
 /*
 %type <expression> tensor_literal tensor_row
 %type <sequence> tensor_rows*/
@@ -93,6 +95,7 @@ static std::vector<size_t> convert_sequence_to_vector(cdk::sequence_node *seq) {
 %left '<' tLE tGE '>'
 %left '+' '-'
 %left tCONTRACT '*' '/' '%' //TODO: tCONTRACT Esta operação tem uma precedência imediatamente superior à da multiplicação habitual.
+%left '.' '@'
 %right tUMINUS
 
 
@@ -230,7 +233,7 @@ expressions     : expression                     { $$ = new cdk::sequence_node(L
 
 expression      : integer                       { $$ = $1; }
                 | real                          { $$ = $1; }
-                //| tensor_literal                { $$ = $1; }
+                | tensor_literal                { $$ = $1; }
                 | string                        { $$ = new cdk::string_node(LINE, $1); }
                 | tNULLPTR                      { $$ = new udf::nullptr_node(LINE); }
                 /* LEFT VALUES */
@@ -284,21 +287,15 @@ lvalue          : tIDENTIFIER                                            { $$ = 
 
 integer         : tINTEGER                      { $$ = new cdk::integer_node(LINE, $1); };
 real            : tREAL                         { $$ = new cdk::double_node(LINE, $1); };
-//tensor_literal  : '[' tensor_rows ']'           { $$ = new udf::tensor_node(LINE, $2); };
+tensor_literal  : '[' tensor_elements ']'       { $$ = new udf::tensor_node(LINE, $2); };
 string          : tSTRING                       { $$ = $1; }
                 | string tSTRING                { $$ = $1; $$->append(*$2); delete $2; }
                 ;
 
-/*
-//TODO: ainda não sei representar tensores literais
-tensor_rows
-    : tensor_row                              { $$ = new cdk::sequence_node(LINE, $1); }
-    | tensor_rows ',' tensor_row              { $$ = new cdk::sequence_node(LINE, $3, $1); }
-    ;
 
-tensor_row
-    : expressions                             { $$ = $1; }
-    | '[' expressions ']'                     { $$ = $2; }
-    ;
-*/
+tensor_elements   : /* empty */                                      { $$ = new cdk::sequence_node(LINE); }
+                  | '[' expressions ']'                              { $$ = new cdk::sequence_node(LINE, $2); }
+                  | tensor_elements ',' '[' expressions ']'          { $$ = new cdk::sequence_node(LINE, $4, $1); }
+                  ;
+
 %%
