@@ -76,7 +76,7 @@ static std::vector<size_t> convert_sequence_to_vector(cdk::sequence_node *seq) {
 %type<sequence> opt_forinit
 
 %type<tensor> tensor_literal
-%type<sequence> tensor_elements
+%type<sequence> tensor_elements //tensor_elements_row
 
 %type<s> string
 %type<type> data_type void_type
@@ -100,7 +100,6 @@ static std::vector<size_t> convert_sequence_to_vector(cdk::sequence_node *seq) {
 //-- The rules below will be included in yyparse, the main parsing function.
 %}
 %%
-
 
 file         : /* empty */  { compiler->ast($$ = new cdk::sequence_node(LINE)); }
              | declarations { compiler->ast($$ = $1); }
@@ -143,7 +142,7 @@ opt_initializer  : /* empty */         { $$ = nullptr; /* must be nullptr, not N
 
 //TODO: rever a ver se isto é preciso ou usar apenas expressions 
 dimensions   : /* empty */              { $$ = new cdk::sequence_node(LINE); }
-             | expressions_int          { $$ = new cdk::sequence_node(LINE, $1); }
+             | expressions_int          { $$ = $1; }
              ;
 
 expressions_int  : integer                             { $$ = new cdk::sequence_node(LINE, $1); }
@@ -298,5 +297,13 @@ tensor_elements   : /* empty */                                      { $$ = new 
                   | '[' expressions ']'                              { $$ = new cdk::sequence_node(LINE, $2); }
                   | tensor_elements ',' '[' expressions ']'          { $$ = new cdk::sequence_node(LINE, $4, $1); }
                   ;
+/*
+tensor_elements :  empty                                { $$ = new cdk::sequence_node(LINE); }
+                | tensor_elements ',' tensor_elements_row   { $$ = new cdk::sequence_node(LINE, $3, $1); }
+                ;
 
+tensor_elements_row  : tensor_elements_row ',' '[' expressions ']'  { $$ = new cdk::sequence_node(LINE, $4, $1); }                 
+                     |'[' expressions ']'                         { $$ = new cdk::sequence_node(LINE, $2); }                
+                     ;
+*/
 %%
