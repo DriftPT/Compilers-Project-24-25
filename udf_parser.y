@@ -12,6 +12,16 @@
 //-- don't change *any* of these --- END!
 
 #define NIL (new cdk::nil_node(LINE))
+
+//TODO: melhor forma de se fazer?
+static std::vector<size_t> convert_sequence_to_vector(cdk::sequence_node *seq) {
+  std::vector<size_t> dims;
+  for (size_t i = 0; i < seq->size(); ++i) {
+    auto int_node = dynamic_cast<cdk::integer_node*>(seq->node(i));
+    dims.push_back(int_node->value());
+  }
+  return dims;
+}
 %}
 
 %parse-param {std::shared_ptr<cdk::compiler> compiler}
@@ -40,28 +50,23 @@
   std::vector<std::string> *ids;
 };
 
-%token tAND tOR tNE tLE tGE tSIZEOF tOBJECTS //tOBJECTS?
+%token tAND tOR tNE tLE tGE tSIZEOF tOBJECTS 
 %token tINPUT tWRITE tWRITELN
 %token tPUBLIC tPRIVATE tFORWARD
 %token tTYPE_STRING tTYPE_INT tTYPE_REAL tTYPE_POINTER tTYPE_AUTO tTYPE_VOID tTYPE_TENSOR
 %token tIF tELIF tELSE
 %token tFOR
 %token tBREAK tCONTINUE tRETURN
+%token tCAPACITY tRANK tDIMS tDIM tRESHAPE
 
 %token <i> tINTEGER
 %token <d> tREAL
 %token <s> tIDENTIFIER tSTRING
 %token <expression> tNULLPTR
 
-/*%type <node> stmt //prudfram
-%type <sequence> stmts exprs
-%type <expression> expr
-%type <lvalue> lval*/
-
-//TODO: NOT FINISHED TYPES
 %type<node> instruction return iffalse 
 %type<sequence> file instructions opt_instructions 
-%type<sequence> expressions opt_expressions //dimensions
+%type<sequence> expressions opt_expressions expressions_int
 %type<expression> expression integer real opt_initializer
 %type<lvalue> lvalue
 %type<block> block
@@ -124,23 +129,22 @@ vardecs      : vardec ';'          { $$ = new cdk::sequence_node(LINE, $1);     
              ;
 
 
-data_type    : tTYPE_STRING                     { $$ = cdk::primitive_type::create(4, cdk::TYPE_STRING);  }
-             | tTYPE_INT                        { $$ = cdk::primitive_type::create(4, cdk::TYPE_INT);     }
-             | tTYPE_REAL                       { $$ = cdk::primitive_type::create(8, cdk::TYPE_DOUBLE);  }
-              /*| tTYPE_TENSOR '<' dimensions '>'  { $$ = cdk::reference_type::create(4, $3); }//TODO: NÂO CONSEGUI*/
-             | tTYPE_POINTER '<' data_type '>'  { $$ = cdk::reference_type::create(4, $3); }
-             | tTYPE_POINTER '<' tTYPE_AUTO '>' { $$ = cdk::reference_type::create(4, nullptr); }
+data_type    : tTYPE_STRING                          { $$ = cdk::primitive_type::create(4, cdk::TYPE_STRING);  }
+             | tTYPE_INT                             { $$ = cdk::primitive_type::create(4, cdk::TYPE_INT);     }
+             | tTYPE_REAL                            { $$ = cdk::primitive_type::create(8, cdk::TYPE_DOUBLE);  }
+             | tTYPE_TENSOR '<' expressions_int '>'  { $$ = cdk::tensor_type::create(convert_sequence_to_vector($3)); }
+             | tTYPE_POINTER '<' data_type '>'       { $$ = cdk::reference_type::create(4, $3); }
+             | tTYPE_POINTER '<' tTYPE_AUTO '>'      { $$ = cdk::reference_type::create(4, nullptr); }
              ;
 
 opt_initializer  : /* empty */         { $$ = nullptr; /* must be nullptr, not NIL */ }
                  | '=' expression      { $$ = $2; }
                  ;
-/*
-dimensions
-    : tINTEGER                        { $$ = new cdk::sequence_node(LINE, new cdk::integer_node(LINE, $1)); }
-    | dimensions ',' tINTEGER         { $$ = new cdk::sequence_node(LINE, new cdk::integer_node(LINE, $3), $1); }
+
+expressions_int
+    : integer                             { $$ = new cdk::sequence_node(LINE, $1); }
+    | expressions_int ',' integer         { $$ = new cdk::sequence_node(LINE, $3, $1); }
     ;
-*/
 
 void_type   : tTYPE_VOID { $$ = cdk::primitive_type::create(0, cdk::TYPE_VOID);   }
             ;
@@ -253,33 +257,29 @@ expression      : integer                       { $$ = $1; }
                 | '-' expression %prec tUMINUS  { $$ = new cdk::unary_minus_node(LINE, $2); }
                 | '+' expression %prec tUMINUS  { $$ = $2; }
                 | '~' expression                { $$ = new cdk::not_node(LINE, $2); }
-                /* TENSORS EXPRESSION*//*
-                | expression '.' tIDENTIFIER    { if (*$3 == "capacity") $$ = new udf::tensor_capacity_node(LINE, $1);
-                                                  else if (*$3 == "rank") $$ = new udf::tensor_rank_node(LINE, $1);
-                                                  else if (*$3 == "dims") $$ = new udf::tensor_dims_node(LINE, $1);
-                                                  else yyerror(compiler, "Unknown tensor property"); delete $3; }
-                | expression '.' tIDENTIFIER '(' expression ')'   { if (*$3 == "dim") $$ = new udf::tensor_dim_node(LINE, $1, $5);
-                                                                    else yyerror(compiler, "Unknown tensor method"); delete $3; } 
-                | expression '.' tIDENTIFIER '(' dimensions ')'   { if (*$3 == "reshape") $$ = new udf::tensor_reshape_node(LINE, $1, $5);
-                                                                    else yyerror(compiler, "Unknown tensor method"); delete $3; } 
-                | expression '@' '(' expressions ')'              { $$ = new udf::tensor_index_node(LINE, $1, $4); }                                                     
-                | expression tCONTRACT expression                 { $$ = new udf::tensor_contraction_node(LINE, $1, $3); }                                                                                     
-                */
+                /* TENSORS EXPRESSION*/
+                | expression '.' tCAPACITY                          { $$ = new udf::tensor_capacity_node(LINE, $1); }
+                | expression '.' tRANK                              { $$ = new udf::tensor_rank_node(LINE, $1); }
+                | expression '.' tDIMS                              { $$ = new udf::tensor_dims_node(LINE, $1); }
+                | expression '.' tDIM '(' expression ')'            { $$ = new udf::tensor_dim_node(LINE, $1, $5); }
+                | expression '.' tRESHAPE '(' expressions_int ')'   { $$ = new udf::tensor_reshape_node(LINE, $1, $5); }                                                    
+                | expression tCONTRACT expression                   { $$ = new udf::tensor_contraction_node(LINE, $1, $3); }                                                                                     
                 /* OTHER EXPRESSION */
                 | tINPUT                        { $$ = new udf::input_node(LINE); }
                 /* OTHER EXPRESSION */
                 | tIDENTIFIER '(' opt_expressions ')'   { $$ = new udf::function_call_node(LINE, *$1, $3); delete $1; }
                 | tSIZEOF '(' expression ')'            { $$ = new udf::sizeof_node(LINE, $3); }
                 /* OTHER EXPRESSION */
-                | '(' expression ')'            { $$ = $2; }
+                | '(' expression ')'                     { $$ = $2; }
                 | tOBJECTS '(' expression ')'            { $$ = new udf::objects_alloc_node(LINE, $3); }
-                | lvalue '?'                    { $$ = new udf::address_of_node(LINE, $1); }
+                | lvalue '?'                             { $$ = new udf::address_of_node(LINE, $1); }
                 ;
 
 lvalue          : tIDENTIFIER                                            { $$ = new cdk::variable_node(LINE, *$1); delete $1; }
-                | lvalue             '[' expression ']'          { $$ = new udf::index_node(LINE, new cdk::rvalue_node(LINE, $1), $3); }
-                | '(' expression ')' '[' expression ']'          { $$ = new udf::index_node(LINE, $2, $5); }
+                | lvalue             '[' expression ']'                  { $$ = new udf::index_node(LINE, new cdk::rvalue_node(LINE, $1), $3); }
+                | '(' expression ')' '[' expression ']'                  { $$ = new udf::index_node(LINE, $2, $5); }
                 | tIDENTIFIER '(' opt_expressions ')' '[' expression ']' { $$ = new udf::index_node(LINE, new udf::function_call_node(LINE, *$1, $3), $6); }
+                | expression '@' '(' expressions_int ')'                 { $$ = new udf::tensor_index_node(LINE, $1, $4); } 
                 ;
 
 integer         : tINTEGER                      { $$ = new cdk::integer_node(LINE, $1); };

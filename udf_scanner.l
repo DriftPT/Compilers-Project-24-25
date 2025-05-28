@@ -107,6 +107,15 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]])*
 "nullptr"              return tNULLPTR;
 "objects"              return tOBJECTS;
 "sizeof"               return tSIZEOF;
+  /* ====================================================================== */
+  /* ====[           7.3 Expressões dependentes de tensores           ]==== */
+  /* ====================================================================== */
+
+"capacity"             return tCAPACITY;
+"rank"                 return tRANK;
+"dims"                 return tDIMS;
+"dim"                  return tDIM;
+"reshape"              return tRESHAPE;
 
   /* ====================================================================== */
   /* ====[                   3.8.1 - inteiros                         ]==== */
