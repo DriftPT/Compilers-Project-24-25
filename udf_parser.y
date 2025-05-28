@@ -77,9 +77,6 @@ static std::vector<size_t> convert_sequence_to_vector(cdk::sequence_node *seq) {
 
 %type<tensor> tensor_literal
 %type<sequence> tensor_elements
-/*
-%type <expression> tensor_literal tensor_row
-%type <sequence> tensor_rows*/
 
 %type<s> string
 %type<type> data_type void_type

@@ -87,7 +87,7 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]])*
   /* ====[                 Operadores especiais                       ]==== */
   /* ====================================================================== */
 
-[()\[\]{},;:]         return *yytext;
+[()\[\]{},.;:]         return *yytext;
 
   /* ====================================================================== */
   /* ====[                 7 - Operadores de expressões               ]==== */
@@ -107,6 +107,7 @@ IDENTIFIER   {LETTER}({LETTER}|[[:digit:]])*
 "nullptr"              return tNULLPTR;
 "objects"              return tOBJECTS;
 "sizeof"               return tSIZEOF;
+
   /* ====================================================================== */
   /* ====[           7.3 Expressões dependentes de tensores           ]==== */
   /* ====================================================================== */
