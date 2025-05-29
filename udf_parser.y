@@ -13,15 +13,6 @@
 
 #define NIL (new cdk::nil_node(LINE))
 
-//TODO: melhor forma de se fazer?
-static std::vector<size_t> convert_sequence_to_vector(cdk::sequence_node *seq) {
-  std::vector<size_t> dims;
-  for (size_t i = 0; i < seq->size(); ++i) {
-    auto int_node = dynamic_cast<cdk::integer_node*>(seq->node(i));
-    dims.push_back(int_node->value());
-  }
-  return dims;
-}
 %}
 
 %parse-param {std::shared_ptr<cdk::compiler> compiler}
@@ -47,6 +38,7 @@ static std::vector<size_t> convert_sequence_to_vector(cdk::sequence_node *seq) {
 
   udf::block_node      *block;
   udf::tensor_node     *tensor;
+  std::vector<size_t>     *dimensions; 
   std::vector<std::string> *ids;
 };
 
@@ -70,6 +62,7 @@ static std::vector<size_t> convert_sequence_to_vector(cdk::sequence_node *seq) {
 %type<expression> expression opt_initializer
 %type<lvalue> lvalue
 %type<block> block
+%type<dimensions> dims
 
 %type<node>     declaration  argdec  fordec  vardec fundec fundef
 %type<sequence> declarations argdecs fordecs vardecs opt_vardecs
@@ -131,7 +124,7 @@ vardecs      : vardec ';'          { $$ = new cdk::sequence_node(LINE, $1);     
 data_type    : tTYPE_STRING                          { $$ = cdk::primitive_type::create(4, cdk::TYPE_STRING);  }
              | tTYPE_INT                             { $$ = cdk::primitive_type::create(4, cdk::TYPE_INT);     }
              | tTYPE_REAL                            { $$ = cdk::primitive_type::create(8, cdk::TYPE_DOUBLE);  }
-             | tTYPE_TENSOR '<' expressions_int '>'  { $$ = cdk::tensor_type::create(convert_sequence_to_vector($3)); }
+             | tTYPE_TENSOR '<' dims '>'             { $$ = cdk::tensor_type::create(*$3); delete $3; }
              | tTYPE_POINTER '<' data_type '>'       { $$ = cdk::reference_type::create(4, $3); }
              | tTYPE_POINTER '<' tTYPE_AUTO '>'      { $$ = cdk::reference_type::create(4, nullptr); }
              ;
@@ -140,6 +133,9 @@ opt_initializer  : /* empty */         { $$ = nullptr; /* must be nullptr, not N
                  | '=' expression      { $$ = $2; }
                  ;
 
+dims : tINTEGER              { $$ = new std::vector<size_t>(); $$->push_back($1); }
+     | dims ',' tINTEGER     { $$ = $1; $$->push_back($3); }
+     ;
 //TODO: rever a ver se isto é preciso ou usar apenas expressions 
 expressions_int  : tINTEGER                             { $$ = new cdk::sequence_node(LINE, new cdk::integer_node(LINE, $1)); }
                  | expressions_int ',' tINTEGER         { $$ = new cdk::sequence_node(LINE, new cdk::integer_node(LINE, $3), $1); }
