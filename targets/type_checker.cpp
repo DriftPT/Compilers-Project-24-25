@@ -117,7 +117,7 @@ void udf::type_checker::do_eq_node(cdk::eq_node *const node, int lvl) {
 //---------------------------------------------------------------------------
 
 void udf::type_checker::do_variable_node(cdk::variable_node *const node, int lvl) {
-  ASSERT_UNSPEC;
+  /*ASSERT_UNSPEC;
   const std::string &id = node->name();
   std::shared_ptr<udf::symbol> symbol = _symtab.find(id);
 
@@ -125,21 +125,21 @@ void udf::type_checker::do_variable_node(cdk::variable_node *const node, int lvl
     node->type(symbol->type());
   } else {
     throw id;
-  }
+  }*/
 }
 
 void udf::type_checker::do_rvalue_node(cdk::rvalue_node *const node, int lvl) {
-  ASSERT_UNSPEC;
+  /*ASSERT_UNSPEC;
   try {
     node->lvalue()->accept(this, lvl);
     node->type(node->lvalue()->type());
   } catch (const std::string &id) {
     throw "undeclared variable '" + id + "'";
-  }
+  }*/
 }
 
 void udf::type_checker::do_assignment_node(cdk::assignment_node *const node, int lvl) {
-  ASSERT_UNSPEC;
+  /*ASSERT_UNSPEC;
 
   try {
     node->lvalue()->accept(this, lvl);
@@ -156,7 +156,7 @@ void udf::type_checker::do_assignment_node(cdk::assignment_node *const node, int
   if (!node->rvalue()->is_typed(cdk::TYPE_INT)) throw std::string("wrong type in right argument of assignment expression");
 
   // in UDF, expressions are always int
-  node->type(cdk::primitive_type::create(4, cdk::TYPE_INT));
+  node->type(cdk::primitive_type::create(4, cdk::TYPE_INT));*/
 }
 
 //---------------------------------------------------------------------------

@@ -66,8 +66,8 @@ static std::vector<size_t> convert_sequence_to_vector(cdk::sequence_node *seq) {
 
 %type<node> instruction return iffalse 
 %type<sequence> file instructions opt_instructions 
-%type<sequence> expressions opt_expressions expressions_int dimensions
-%type<expression> expression integer real opt_initializer
+%type<sequence> expressions opt_expressions expressions_int
+%type<expression> expression opt_initializer
 %type<lvalue> lvalue
 %type<block> block
 
@@ -131,7 +131,7 @@ vardecs      : vardec ';'          { $$ = new cdk::sequence_node(LINE, $1);     
 data_type    : tTYPE_STRING                          { $$ = cdk::primitive_type::create(4, cdk::TYPE_STRING);  }
              | tTYPE_INT                             { $$ = cdk::primitive_type::create(4, cdk::TYPE_INT);     }
              | tTYPE_REAL                            { $$ = cdk::primitive_type::create(8, cdk::TYPE_DOUBLE);  }
-             | tTYPE_TENSOR '<' dimensions '>'       { $$ = cdk::tensor_type::create(convert_sequence_to_vector($3)); }
+             | tTYPE_TENSOR '<' expressions_int '>'  { $$ = cdk::tensor_type::create(convert_sequence_to_vector($3)); }
              | tTYPE_POINTER '<' data_type '>'       { $$ = cdk::reference_type::create(4, $3); }
              | tTYPE_POINTER '<' tTYPE_AUTO '>'      { $$ = cdk::reference_type::create(4, nullptr); }
              ;
@@ -141,12 +141,8 @@ opt_initializer  : /* empty */         { $$ = nullptr; /* must be nullptr, not N
                  ;
 
 //TODO: rever a ver se isto é preciso ou usar apenas expressions 
-dimensions   : /* empty */              { $$ = new cdk::sequence_node(LINE); }
-             | expressions_int          { $$ = $1; }
-             ;
-
-expressions_int  : integer                             { $$ = new cdk::sequence_node(LINE, $1); }
-                 | expressions_int ',' integer         { $$ = new cdk::sequence_node(LINE, $3, $1); }
+expressions_int  : tINTEGER                             { $$ = new cdk::sequence_node(LINE, new cdk::integer_node(LINE, $1)); }
+                 | expressions_int ',' tINTEGER         { $$ = new cdk::sequence_node(LINE, new cdk::integer_node(LINE, $3), $1); }
                  ;
 
 void_type   : tTYPE_VOID { $$ = cdk::primitive_type::create(0, cdk::TYPE_VOID);   }
@@ -231,8 +227,8 @@ expressions     : expression                     { $$ = new cdk::sequence_node(L
                 ;
 
 
-expression      : integer                       { $$ = $1; }
-                | real                          { $$ = $1; }
+expression      : tINTEGER                      { $$ = new cdk::integer_node(LINE, $1); }
+                | tREAL                         { $$ = new cdk::double_node(LINE, $1); }
                 | tensor_literal                { $$ = $1; }
                 | string                        { $$ = new cdk::string_node(LINE, $1); }
                 | tNULLPTR                      { $$ = new udf::nullptr_node(LINE); }
@@ -285,25 +281,16 @@ lvalue          : tIDENTIFIER                                            { $$ = 
                 | expression '@' '(' expressions ')'                      { $$ = new udf::tensor_index_node(LINE, $1, $4); } 
                 ;
 
-integer         : tINTEGER                      { $$ = new cdk::integer_node(LINE, $1); };
-real            : tREAL                         { $$ = new cdk::double_node(LINE, $1); };
-tensor_literal  : '[' tensor_elements ']'       { $$ = new udf::tensor_node(LINE, $2); };
 string          : tSTRING                       { $$ = $1; }
                 | string tSTRING                { $$ = $1; $$->append(*$2); delete $2; }
                 ;
 
-
-tensor_elements   : /* empty */                                      { $$ = new cdk::sequence_node(LINE); }
-                  | '[' expressions ']'                              { $$ = new cdk::sequence_node(LINE, $2); }
-                  | tensor_elements ',' '[' expressions ']'          { $$ = new cdk::sequence_node(LINE, $4, $1); }
-                  ;
-/*
-tensor_elements :  empty                                { $$ = new cdk::sequence_node(LINE); }
-                | tensor_elements ',' tensor_elements_row   { $$ = new cdk::sequence_node(LINE, $3, $1); }
+tensor_literal  : '[' expressions ']'       { $$ = new udf::tensor_node(LINE, new cdk::sequence_node(LINE, $2)); };
+                | '[' tensor_elements ']'   { $$ = new udf::tensor_node(LINE, $2); }
                 ;
 
-tensor_elements_row  : tensor_elements_row ',' '[' expressions ']'  { $$ = new cdk::sequence_node(LINE, $4, $1); }                 
-                     |'[' expressions ']'                         { $$ = new cdk::sequence_node(LINE, $2); }                
-                     ;
-*/
+tensor_elements : tensor_literal                      { $$ = new cdk::sequence_node(LINE, $1); }
+                | tensor_elements ',' tensor_literal  { $$ = new cdk::sequence_node(LINE, $3, $1); }
+                ;
+
 %%

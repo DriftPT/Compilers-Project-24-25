@@ -308,7 +308,6 @@ void udf::xml_writer::do_function_definition_node(udf::function_definition_node 
 
 void udf::xml_writer::do_function_declaration_node(udf::function_declaration_node * const node, int lvl) {
   ASSERT_SAFE_EXPRESSIONS;
-  reset_new_symbol(); //TODO: ?
   os() << std::string(lvl, ' ') << "<" << node->label() << " name='" << node->identifier() << "' qualifier='"
       << qualifier_name(node->qualifier()) << "' return_type='" << cdk::to_string(node->type()) 
       << "'>" << std::endl;
@@ -323,7 +322,6 @@ void udf::xml_writer::do_function_declaration_node(udf::function_declaration_nod
 
 void udf::xml_writer::do_variable_declaration_node(udf::variable_declaration_node * const node, int lvl) {
   ASSERT_SAFE_EXPRESSIONS;
-  reset_new_symbol(); //TODO: ?
   os() << std::string(lvl, ' ') << "<" << node->label() << " name='" << node->identifier() << "' qualifier='"
       << qualifier_name(node->qualifier()) << "' type='" << cdk::to_string(node->type()) << "'>" << std::endl;
 
@@ -340,12 +338,11 @@ void udf::xml_writer::do_variable_declaration_node(udf::variable_declaration_nod
 void udf::xml_writer::do_tensor_node(udf::tensor_node * const node, int lvl) {
   ASSERT_SAFE_EXPRESSIONS;
   openTag(node, lvl);
-  node->values()->accept(this, lvl + 4); //TODO: if é necessario?
+  node->values()->accept(this, lvl + 4);
   closeTag(node, lvl);
 }
 
 void udf::xml_writer::do_tensor_index_node(udf::tensor_index_node * const node, int lvl) {
-  //TODO:VER ERRO
   ASSERT_SAFE_EXPRESSIONS;
   openTag(node, lvl);
   openTag("tensor", lvl + 2);
