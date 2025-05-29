@@ -109,6 +109,8 @@ declaration  : vardec ';' { $$ = $1; }
 vardec       : tFORWARD data_type  tIDENTIFIER                    { $$ = new udf::variable_declaration_node(LINE, tPUBLIC,  $2, *$3, nullptr); }
              | tPUBLIC  data_type  tIDENTIFIER  opt_initializer   { $$ = new udf::variable_declaration_node(LINE, tPUBLIC,  $2, *$3, $4); }
              |          data_type  tIDENTIFIER  opt_initializer   { $$ = new udf::variable_declaration_node(LINE, tPRIVATE, $1, *$2, $3); }
+             | tPUBLIC  tTYPE_AUTO tIDENTIFIER '=' expression     { $$ = new udf::variable_declaration_node(LINE, tPUBLIC,  nullptr, *$3, $5); }
+             |          tTYPE_AUTO tIDENTIFIER '=' expression     { $$ = new udf::variable_declaration_node(LINE, tPRIVATE, nullptr, *$2, $4); }
              ; 
 
 opt_vardecs  : /* empty */ { $$ = NULL; }
