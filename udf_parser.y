@@ -58,7 +58,7 @@
 
 %type<node> instruction return iffalse 
 %type<sequence> file instructions opt_instructions 
-%type<sequence> expressions opt_expressions expressions_int
+%type<sequence> expressions opt_expressions
 %type<expression> expression opt_initializer
 %type<lvalue> lvalue
 %type<block> block
@@ -135,10 +135,6 @@ opt_initializer  : /* empty */         { $$ = nullptr; /* must be nullptr, not N
 dims : tINTEGER              { $$ = new std::vector<size_t>(); $$->push_back($1); }
      | dims ',' tINTEGER     { $$ = $1; $$->push_back($3); }
      ;
-//TODO: rever a ver se isto é preciso ou usar apenas expressions 
-expressions_int  : tINTEGER                             { $$ = new cdk::sequence_node(LINE, new cdk::integer_node(LINE, $1)); }
-                 | expressions_int ',' tINTEGER         { $$ = new cdk::sequence_node(LINE, new cdk::integer_node(LINE, $3), $1); }
-                 ;
 
 void_type   : tTYPE_VOID { $$ = cdk::primitive_type::create(0, cdk::TYPE_VOID);   }
             ;
@@ -256,7 +252,7 @@ expression      : tINTEGER                      { $$ = new cdk::integer_node(LIN
                 | expression '.' tRANK                              { $$ = new udf::tensor_rank_node(LINE, $1); }
                 | expression '.' tDIMS                              { $$ = new udf::tensor_dims_node(LINE, $1); }
                 | expression '.' tDIM '(' expression ')'            { $$ = new udf::tensor_dim_node(LINE, $1, $5); }
-                | expression '.' tRESHAPE '(' expressions_int ')'   { $$ = new udf::tensor_reshape_node(LINE, $1, $5); }                                                    
+                | expression '.' tRESHAPE '(' expressions ')'       { $$ = new udf::tensor_reshape_node(LINE, $1, $5); }                                                    
                 | expression tCONTRACT expression                   { $$ = new udf::tensor_contraction_node(LINE, $1, $3); }                                                                                     
                 /* OTHER EXPRESSION */
                 | tINPUT                        { $$ = new udf::input_node(LINE); }
@@ -273,7 +269,7 @@ lvalue          : tIDENTIFIER                                            { $$ = 
                 | lvalue             '[' expression ']'                  { $$ = new udf::index_node(LINE, new cdk::rvalue_node(LINE, $1), $3); }
                 | '(' expression ')' '[' expression ']'                  { $$ = new udf::index_node(LINE, $2, $5); }
                 | tIDENTIFIER '(' opt_expressions ')' '[' expression ']' { $$ = new udf::index_node(LINE, new udf::function_call_node(LINE, *$1, $3), $6); }
-                | expression '@' '(' expressions ')'                      { $$ = new udf::tensor_index_node(LINE, $1, $4); } 
+                | expression '@' '(' expressions ')'                     { $$ = new udf::tensor_index_node(LINE, $1, $4); } 
                 ;
 
 string          : tSTRING                       { $$ = $1; }
