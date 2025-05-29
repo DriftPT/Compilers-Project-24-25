@@ -69,7 +69,6 @@
 %type<sequence> opt_forinit
 
 %type<tensor> tensor_literal
-%type<sequence> tensor_elements //tensor_elements_row
 
 %type<s> string
 %type<type> data_type void_type
@@ -281,12 +280,7 @@ string          : tSTRING                       { $$ = $1; }
                 | string tSTRING                { $$ = $1; $$->append(*$2); delete $2; }
                 ;
 
-tensor_literal  : '[' expressions ']'       { $$ = new udf::tensor_node(LINE, new cdk::sequence_node(LINE, $2)); };
-                | '[' tensor_elements ']'   { $$ = new udf::tensor_node(LINE, $2); }
-                ;
-
-tensor_elements : tensor_literal                      { $$ = new cdk::sequence_node(LINE, $1); }
-                | tensor_elements ',' tensor_literal  { $$ = new cdk::sequence_node(LINE, $3, $1); }
+tensor_literal  : '[' expressions ']'       { $$ = new udf::tensor_node(LINE, $2); };
                 ;
 
 %%
