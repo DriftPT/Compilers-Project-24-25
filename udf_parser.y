@@ -194,7 +194,7 @@ instructions    : instruction                { $$ = new cdk::sequence_node(LINE,
                 | instructions instruction   { $$ = new cdk::sequence_node(LINE, $2, $1); }
                 ;
 
-instruction     : tIF '(' expression ')' instruction                                            { $$ = new udf::if_node(LINE, $3, $5); }
+instruction     : tIF '(' expression ')' instruction                                %prec tIF   { $$ = new udf::if_node(LINE, $3, $5); }
                 | tIF '(' expression ')' instruction iffalse                                    { $$ = new udf::if_else_node(LINE, $3, $5, $6); }
                 | tFOR '(' opt_forinit ';' opt_expressions ';' opt_expressions ')' instruction  { $$ = new udf::for_node(LINE, $3, $5, $7, $9); }
                 | expression ';'                                                                { $$ = new udf::evaluation_node(LINE, $1); }
