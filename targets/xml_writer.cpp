@@ -248,7 +248,6 @@ void udf::xml_writer::do_address_of_node(udf::address_of_node * const node, int 
 }
 
 void udf::xml_writer::do_index_node(udf::index_node * const node, int lvl) {
-  // TODO:REVER
   openTag(node, lvl);
   openTag("ptr", lvl + 2);
   node->ptr()->accept(this, lvl + 4);
@@ -260,7 +259,6 @@ void udf::xml_writer::do_index_node(udf::index_node * const node, int lvl) {
 }
 
 void udf::xml_writer::do_objects_alloc_node(udf::objects_alloc_node * const node, int lvl) {
-  //TODO:REVER
   openTag(node, lvl);
   node->argument()->accept(this, lvl + 2);
   closeTag(node, lvl);
@@ -277,7 +275,6 @@ void udf::xml_writer::do_function_call_node(udf::function_call_node * const node
 }
 
 void udf::xml_writer::do_function_definition_node(udf::function_definition_node * const node, int lvl) {
-  //TODO:REVER
   os() << std::string(lvl, ' ') << "<" << node->label() << " name='" << node->identifier() << "' qualifier='"
        << qualifier_name(node->qualifier()) << "' return_type='" << cdk::to_string(node->type()) 
        << "'>" << std::endl;
