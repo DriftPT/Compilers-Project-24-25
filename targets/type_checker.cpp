@@ -253,7 +253,7 @@ void udf::type_checker::do_input_node(udf::input_node *const node, int lvl) {
 //---------------------------------------------------------------------------
 
 void udf::type_checker::do_for_node(udf::for_node *const node, int lvl) {
-  /*TODO:  // Inicialização (declarações ou expressões)
+  //TODO: rever
   if (node->init()) {
     node->init()->accept(this, lvl + 2);
 
@@ -263,7 +263,7 @@ void udf::type_checker::do_for_node(udf::for_node *const node, int lvl) {
       auto decl = dynamic_cast<udf::variable_declaration_node*>(node->init()->node(i));
       if (decl) {
         ++decl_count;
-        if (decl->var_type()->name() == cdk::TYPE_AUTO)
+        if (decl->type()->name() == cdk::TYPE_UNSPEC)
           ++auto_count;
       }
     }
@@ -287,7 +287,7 @@ void udf::type_checker::do_for_node(udf::for_node *const node, int lvl) {
 
   // Corpo do for
   if (node->instruction())
-    node->instruction()->accept(this, lvl + 2);*/
+    node->instruction()->accept(this, lvl + 2);
 }
 
 void udf::type_checker::do_break_node(udf::break_node *const node, int lvl) {
@@ -385,7 +385,12 @@ void udf::type_checker::do_index_node(udf::index_node *const node, int lvl) {
 }
 
 void udf::type_checker::do_objects_alloc_node(udf::objects_alloc_node *const node, int lvl) {
-  // TODO
+  ASSERT_UNSPEC;
+  node->argument()->accept(this, lvl + 2);
+  if (!node->argument()->is_typed(cdk::TYPE_INT)) {
+    throw std::string("integer expression expected in objects allocation");
+  }
+  node->type(cdk::reference_type::create(4, nullptr));
 }
 
 void udf::type_checker::do_function_call_node(udf::function_call_node *const node, int lvl) {
@@ -579,7 +584,37 @@ void udf::type_checker::do_tensor_rank_node(udf::tensor_rank_node *const node, i
 }
 
 void udf::type_checker::do_tensor_node(udf::tensor_node *const node, int lvl) {
-  // TODO
+  ASSERT_UNSPEC;
+  // TODO: rever muito provavel estar errado:
+  struct Helper {
+    static void process(udf::type_checker *checker, cdk::sequence_node *seq, std::vector<size_t> &shape, size_t depth, int lvl) {
+      if (seq->size() == 0)
+        throw std::string("tensor dimensions must be > 0");
+      if (shape.size() <= depth)
+        shape.push_back(seq->size());
+      else if (shape[depth] != seq->size())
+        throw std::string("tensor is not rectangular");
+
+      for (size_t i = 0; i < seq->size(); ++i) {
+        auto val = seq->node(i);
+        auto tensor = dynamic_cast<udf::tensor_node*>(val);
+        if (tensor) {
+          process(checker, tensor->values(), shape, depth + 1, lvl);
+        } else {
+          // folha: deve ser int ou double
+          val->accept(checker, lvl + 2);
+          auto expr = dynamic_cast<cdk::expression_node*>(val);
+          if (!expr || (!expr->is_typed(cdk::TYPE_INT) && !expr->is_typed(cdk::TYPE_DOUBLE)))
+            throw std::string("tensor elements must be int or double");
+        }
+      }
+    }
+  };
+
+  std::vector<size_t> shape;
+  Helper::process(this, node->values(), shape, 0, lvl);
+
+  node->type(cdk::tensor_type::create(shape));
 }
 
 void udf::type_checker::do_tensor_contraction_node(udf::tensor_contraction_node *const node, int lvl) {
@@ -599,7 +634,7 @@ void udf::type_checker::do_tensor_contraction_node(udf::tensor_contraction_node 
   const auto &dims1 = t1_type->dims();
   const auto &dims2 = t2_type->dims();
 
-  //TODO será?
+  //TODO: será?
   if (dims1.empty() || dims2.empty())
     throw std::string("cannot contract tensors with zero dimensions");
 
