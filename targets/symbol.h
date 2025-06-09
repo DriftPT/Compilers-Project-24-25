@@ -15,6 +15,7 @@ namespace udf {
     int _qualifier; // qualifiers: public, forward, "private" (i.e., none)
     std::vector<std::shared_ptr<cdk::basic_type>> _argument_types;
     bool _initialized; // initialized?
+    int _offset = 0; // 0 (zero) means global variable/function
     bool _function; // false for variables
     bool _forward = false;
 
@@ -56,8 +57,17 @@ namespace udf {
     bool initialized() const {
       return _initialized;
     }
+    int offset() const {
+      return _offset;
+    }
+    void set_offset(int offset) {
+      _offset = offset;
+    }
     bool isFunction() const {
       return _function;
+    }
+    bool global() const {
+      return _offset == 0;
     }
     bool forward() const {
       return _forward;
