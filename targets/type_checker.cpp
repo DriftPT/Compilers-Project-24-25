@@ -389,19 +389,135 @@ void udf::type_checker::do_objects_alloc_node(udf::objects_alloc_node *const nod
 }
 
 void udf::type_checker::do_function_call_node(udf::function_call_node *const node, int lvl) {
-  // TODO
+  ASSERT_UNSPEC;
+
+  const std::string &id = node->identifier();
+  auto symbol = _symtab.find(id);
+  if (!symbol) throw std::string("symbol '" + id + "' is undeclared.");
+  if (!symbol->isFunction()) throw std::string("symbol '" + id + "' is not a function.");
+  
+  /*
+  TODO:??
+  if (symbol->is_typed(cdk::TYPE_STRUCT)) {
+    // declare return variable for passing to function call
+    const std::string return_var_name = "$return_" + id;
+    auto return_symbol = og::make_symbol(false, symbol->qualifier(), symbol->type(), return_var_name, false, false);
+    if (_symtab.insert(return_var_name, return_symbol)) {
+    } else {
+      // if already declared, ignore new insertion
+    }
+  }
+  */
+  node->type(symbol->type());
+
+  if (node->arguments()->size() == symbol->number_of_arguments()) {
+    node->arguments()->accept(this, lvl + 4);
+    for (size_t ax = 0; ax < node->arguments()->size(); ax++) {
+      auto expected = symbol->argument_type(ax);
+      auto actual = node->argument(ax)->type();
+      if (actual == expected) continue;
+      if (expected && expected->name() == cdk::TYPE_DOUBLE && node->argument(ax)->is_typed(cdk::TYPE_INT)) continue;
+      throw std::string("type mismatch for argument " + std::to_string(ax + 1) + " of '" + id + "'.");
+    }
+  } else {
+    throw std::string(
+      "number of arguments in call (" + std::to_string(node->arguments()->size()) + ") must match declaration ("
+      + std::to_string(symbol->number_of_arguments()) + ")."
+    );
+  }
 }
 
 void udf::type_checker::do_function_definition_node(udf::function_definition_node *const node, int lvl) {
-  // TODO
+  std::string id = node->identifier();
+  if (id == "udf")
+    id = "_main";
+  else if (id == "_main")
+    id = "._main";
+  
+  auto function = udf::make_symbol(false, node->qualifier(), node->type(), id, false, true);
+
+  std::vector < std::shared_ptr < cdk::basic_type >> argtypes;
+  for (size_t ax = 0; ax < node->arguments()->size(); ax++)
+    argtypes.push_back(node->argument(ax)->type());
+  function->set_argument_types(argtypes);
+
+  std::shared_ptr<udf::symbol> previous = _symtab.find(function->name());
+  if (previous) {
+    if (previous->forward()
+        && ((previous->qualifier() == tPUBLIC && node->qualifier() == tPUBLIC)
+            || (previous->qualifier() == tPRIVATE && node->qualifier() == tPRIVATE))) {
+      _symtab.replace(function->name(), function);
+      _parent->set_new_symbol(function);
+    } else {
+      throw std::string("conflicting definition for '" + function->name() + "'");
+    }
+  } else {
+    _symtab.insert(function->name(), function);
+    _parent->set_new_symbol(function);
+  }
 }
 
 void udf::type_checker::do_function_declaration_node(udf::function_declaration_node *const node, int lvl) {
-  // TODO
+  std::string id = node->identifier();
+
+  if (id == "udf")
+    id = "_main";
+  else if (id == "_main")
+    id = "._main";
+
+  auto function = udf::make_symbol(false, node->qualifier(), node->type(), id, false, true, true);
+
+  std::vector<std::shared_ptr<cdk::basic_type>> argtypes;
+  if (node->arguments()) {
+    for (size_t ax = 0; ax < node->arguments()->size(); ax++)
+      argtypes.push_back(node->argument(ax)->type());
+  }
+  function->set_argument_types(argtypes);
+
+  std::shared_ptr<udf::symbol> previous = _symtab.find(function->name());
+  if (previous) {
+    // TODO: Comparar tipos/assinaturas
+    throw std::string("conflicting declaration for '" + function->name() + "'");
+  } else {
+    _symtab.insert(function->name(), function);
+    _parent->set_new_symbol(function);
+  }
 }
 
 void udf::type_checker::do_variable_declaration_node(udf::variable_declaration_node *const node, int lvl) {
-  // TODO
+  if (node->initializer() != nullptr) {
+    node->initializer()->accept(this, lvl + 2);
+
+    if (node->is_typed(cdk::TYPE_INT)) {
+      if (!node->initializer()->is_typed(cdk::TYPE_INT))
+        throw std::string("wrong type for initializer (integer expected).");
+    } else if (node->is_typed(cdk::TYPE_DOUBLE)) {
+      if (!node->initializer()->is_typed(cdk::TYPE_INT) && !node->initializer()->is_typed(cdk::TYPE_DOUBLE))
+        throw std::string("wrong type for initializer (integer or double expected).");
+    } else if (node->is_typed(cdk::TYPE_STRING)) {
+      if (!node->initializer()->is_typed(cdk::TYPE_STRING))
+        throw std::string("wrong type for initializer (string expected).");
+    } else if (node->is_typed(cdk::TYPE_POINTER)) {
+      if (!node->initializer()->is_typed(cdk::TYPE_POINTER)) {//TODO: rever FIXME
+        auto in = dynamic_cast<cdk::literal_node<int>*>(node->initializer());
+        if (in == nullptr || in->value() != 0)
+          throw std::string("wrong type for initializer (pointer expected).");
+      }
+    } else if (node->is_typed(cdk::TYPE_TENSOR)) {
+      if (!node->initializer()->is_typed(cdk::TYPE_TENSOR))
+        throw std::string("wrong type for initializer (tensor expected).");
+    } else {
+      throw std::string("unknown type for initializer.");
+    }
+  }
+
+  const std::string &id = node->identifier();
+  auto symbol = udf::make_symbol(false, node->qualifier(), node->type(), id, (bool)node->initializer(), false);
+  if (_symtab.insert(id, symbol)) {
+    _parent->set_new_symbol(symbol); 
+  } else {
+    throw std::string("variable '" + id + "' redeclared");
+  }
 }
 
 void udf::type_checker::do_tensor_reshape_node(udf::tensor_reshape_node *const node, int lvl) {
