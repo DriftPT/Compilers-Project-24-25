@@ -23,6 +23,9 @@ namespace udf {
     std::shared_ptr<cdk::basic_type> type() const {
       return _type;
     }
+    void set_type(std::shared_ptr<cdk::basic_type> t) {
+      _type = t;
+    }
     bool is_typed(cdk::typename_type name) const {
       return _type->name() == name;
     }
