@@ -692,7 +692,16 @@ void udf::type_checker::do_variable_declaration_node(udf::variable_declaration_n
     } else if (node->is_typed(cdk::TYPE_TENSOR)) {
       if (!node->initializer()->is_typed(cdk::TYPE_TENSOR))
         throw std::string("wrong type for initializer (tensor expected).");
-    } else {
+    } else if (node->is_typed(cdk::TYPE_UNSPEC)) {
+      if (!node->initializer()->is_typed(cdk::TYPE_INT) &&
+          !node->initializer()->is_typed(cdk::TYPE_DOUBLE) &&
+          !node->initializer()->is_typed(cdk::TYPE_STRING) &&
+          !node->initializer()->is_typed(cdk::TYPE_POINTER) &&
+          !node->initializer()->is_typed(cdk::TYPE_TENSOR)) {
+        throw std::string("wrong type for initializer (int, double, string, pointer or tensor expected).");
+      }
+    }
+    else {
       throw std::string("unknown type for initializer.");
     }
   }
