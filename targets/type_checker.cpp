@@ -27,11 +27,27 @@ void udf::type_checker::do_not_node(cdk::not_node *const node, int lvl) {
     throw std::string("wrong type in unary logical expression");
   }
 }
+
+void udf::type_checker::processBooleanLogicalExpression(cdk::binary_operation_node *const node, int lvl) {
+  ASSERT_UNSPEC;
+  node->left()->accept(this, lvl + 2);
+  if (!node->left()->is_typed(cdk::TYPE_INT)) {
+    throw std::string("integer expression expected in binary expression");
+  }
+
+  node->right()->accept(this, lvl + 2);
+  if (!node->right()->is_typed(cdk::TYPE_INT)) {
+    throw std::string("integer expression expected in binary expression");
+  }
+
+  node->type(cdk::primitive_type::create(4, cdk::TYPE_INT));
+}
+
 void udf::type_checker::do_and_node(cdk::and_node *const node, int lvl) {
-  // EMPTY
+  processBooleanLogicalExpression(node, lvl);
 }
 void udf::type_checker::do_or_node(cdk::or_node *const node, int lvl) {
-  // EMPTY
+  processBooleanLogicalExpression(node, lvl);
 }
 
 //---------------------------------------------------------------------------
@@ -406,7 +422,7 @@ void udf::type_checker::do_function_call_node(udf::function_call_node *const nod
   if (symbol->is_typed(cdk::TYPE_STRUCT)) {
     // declare return variable for passing to function call
     const std::string return_var_name = "$return_" + id;
-    auto return_symbol = og::make_symbol(false, symbol->qualifier(), symbol->type(), return_var_name, false, false);
+    auto return_symbol = udf::make_symbol(false, symbol->qualifier(), symbol->type(), return_var_name, false, false);
     if (_symtab.insert(return_var_name, return_symbol)) {
     } else {
       // if already declared, ignore new insertion
