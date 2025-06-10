@@ -185,12 +185,15 @@ void udf::postfix_writer::do_variable_node(cdk::variable_node * const node, int 
   const std::string &id = node->name();
   auto symbol = _symtab.find(id);
   //external???
-  //FALTA IMPLEMENTACAO NO SYMBOL
-  /*if (symbol->global()) {
+  if (!symbol) {
+    std::cerr << "Unknown variable: " << id << std::endl;
+    return;
+  }
+  if (symbol->global()) {
     _pf.ADDR(symbol->name());
   } else {
     _pf.LOCAL(symbol->offset());
-  }*/
+  }
 }
 
 void udf::postfix_writer::do_rvalue_node(cdk::rvalue_node * const node, int lvl) {
