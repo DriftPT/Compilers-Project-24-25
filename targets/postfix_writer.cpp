@@ -113,9 +113,19 @@ void udf::postfix_writer::do_unary_plus_node(cdk::unary_plus_node * const node, 
 
 void udf::postfix_writer::do_add_node(cdk::add_node * const node, int lvl) {
   ASSERT_SAFE_EXPRESSIONS;
-  node->left()->accept(this, lvl);
-  node->right()->accept(this, lvl);
-  _pf.ADD();
+  if (node->type()->name() == cdk::TYPE_DOUBLE) {
+    node->left()->accept(this, lvl);
+    if (node->left()->type()->name() == cdk::TYPE_INT)
+      _pf.I2D();
+    node->right()->accept(this, lvl);
+    if (node->right()->type()->name() == cdk::TYPE_INT)
+      _pf.I2D();
+    _pf.DADD();
+  } else {
+    node->left()->accept(this, lvl);
+    node->right()->accept(this, lvl);
+    _pf.ADD();
+  }
 }
 void udf::postfix_writer::do_sub_node(cdk::sub_node * const node, int lvl) {
   ASSERT_SAFE_EXPRESSIONS;
