@@ -28,28 +28,6 @@ void udf::type_checker::do_not_node(cdk::not_node *const node, int lvl) {
   }
 }
 
-void udf::type_checker::processBooleanLogicalExpression(cdk::binary_operation_node *const node, int lvl) {
-  ASSERT_UNSPEC;
-  node->left()->accept(this, lvl + 2);
-  if (!node->left()->is_typed(cdk::TYPE_INT)) {
-    throw std::string("integer expression expected in binary expression");
-  }
-
-  node->right()->accept(this, lvl + 2);
-  if (!node->right()->is_typed(cdk::TYPE_INT)) {
-    throw std::string("integer expression expected in binary expression");
-  }
-
-  node->type(cdk::primitive_type::create(4, cdk::TYPE_INT));
-}
-
-void udf::type_checker::do_and_node(cdk::and_node *const node, int lvl) {
-  processBooleanLogicalExpression(node, lvl);
-}
-void udf::type_checker::do_or_node(cdk::or_node *const node, int lvl) {
-  processBooleanLogicalExpression(node, lvl);
-}
-
 //---------------------------------------------------------------------------
 
 void udf::type_checker::do_sequence_node(cdk::sequence_node *const node, int lvl) {
@@ -107,42 +85,226 @@ void udf::type_checker::processBinaryExpression(cdk::binary_operation_node *cons
   node->right()->accept(this, lvl + 2);
   if (!node->right()->is_typed(cdk::TYPE_INT)) throw std::string("wrong type in right argument of binary expression");
 
-  // in UDF, expressions are always int
   node->type(cdk::primitive_type::create(4, cdk::TYPE_INT));
 }
 
-void udf::type_checker::do_add_node(cdk::add_node *const node, int lvl) {
+void udf::type_checker::do_and_node(cdk::and_node *const node, int lvl) {
   processBinaryExpression(node, lvl);
 }
-void udf::type_checker::do_sub_node(cdk::sub_node *const node, int lvl) {
+void udf::type_checker::do_or_node(cdk::or_node *const node, int lvl) {
   processBinaryExpression(node, lvl);
 }
-void udf::type_checker::do_mul_node(cdk::mul_node *const node, int lvl) {
-  processBinaryExpression(node, lvl);
+
+//---------------------------------------------------------------------------
+
+void udf::type_checker::processEqualityExpression(cdk::binary_operation_node *const node, int lvl) {
+  ASSERT_UNSPEC;
+  node->left()->accept(this, lvl + 2);
+  node->right()->accept(this, lvl + 2);
+
+  if ((node->left()->is_typed(cdk::TYPE_INT) || node->left()->is_typed(cdk::TYPE_DOUBLE)) &&
+      (node->right()->is_typed(cdk::TYPE_INT) || node->right()->is_typed(cdk::TYPE_DOUBLE))) {
+    node->type(cdk::primitive_type::create(4, cdk::TYPE_INT));
+    return;
+  }
+
+  if (node->left()->is_typed(cdk::TYPE_POINTER) && node->right()->is_typed(cdk::TYPE_POINTER)) {
+    node->type(cdk::primitive_type::create(4, cdk::TYPE_INT));
+    return;
+  }
+
+  if (node->left()->is_typed(cdk::TYPE_TENSOR) && node->right()->is_typed(cdk::TYPE_TENSOR)) {
+    auto ltype = cdk::tensor_type::cast(node->left()->type());
+    auto rtype = cdk::tensor_type::cast(node->right()->type());
+    if (!ltype || !rtype)
+      throw std::string("invalid tensor type in equality expression");
+    if (ltype->dims() != rtype->dims())
+      throw std::string("tensor shapes must match for coefficient-wise equality");
+    node->type(cdk::primitive_type::create(4, cdk::TYPE_INT));
+    return;
+  }
+
+  throw std::string("wrong type in argument of equality expression");
 }
-void udf::type_checker::do_div_node(cdk::div_node *const node, int lvl) {
-  processBinaryExpression(node, lvl);
-}
-void udf::type_checker::do_mod_node(cdk::mod_node *const node, int lvl) {
-  processBinaryExpression(node, lvl);
-}
-void udf::type_checker::do_lt_node(cdk::lt_node *const node, int lvl) {
-  processBinaryExpression(node, lvl);
-}
-void udf::type_checker::do_le_node(cdk::le_node *const node, int lvl) {
-  processBinaryExpression(node, lvl);
-}
-void udf::type_checker::do_ge_node(cdk::ge_node *const node, int lvl) {
-  processBinaryExpression(node, lvl);
-}
-void udf::type_checker::do_gt_node(cdk::gt_node *const node, int lvl) {
-  processBinaryExpression(node, lvl);
+
+void udf::type_checker::do_eq_node(cdk::eq_node *const node, int lvl) {
+  processEqualityExpression(node, lvl);
 }
 void udf::type_checker::do_ne_node(cdk::ne_node *const node, int lvl) {
-  processBinaryExpression(node, lvl);
+  processEqualityExpression(node, lvl);
 }
-void udf::type_checker::do_eq_node(cdk::eq_node *const node, int lvl) {
-  processBinaryExpression(node, lvl);
+
+//---------------------------------------------------------------------------
+
+void udf::type_checker::processAdditiveExpression(cdk::binary_operation_node *const node, int lvl) {
+  ASSERT_UNSPEC;
+  node->left()->accept(this, lvl + 2);
+  node->right()->accept(this, lvl + 2);
+
+  if ((node->left()->is_typed(cdk::TYPE_INT) || node->left()->is_typed(cdk::TYPE_DOUBLE)) &&
+      (node->right()->is_typed(cdk::TYPE_INT) || node->right()->is_typed(cdk::TYPE_DOUBLE))) {
+    if (node->left()->is_typed(cdk::TYPE_DOUBLE) || node->right()->is_typed(cdk::TYPE_DOUBLE))
+      node->type(cdk::primitive_type::create(8, cdk::TYPE_DOUBLE));
+    else
+      node->type(cdk::primitive_type::create(4, cdk::TYPE_INT));
+    return;
+  }
+
+  if (dynamic_cast<cdk::add_node*>(node)) {
+    if (node->left()->is_typed(cdk::TYPE_POINTER) && node->right()->is_typed(cdk::TYPE_INT)) {
+      node->type(node->left()->type());
+      return;
+    }
+    if (node->left()->is_typed(cdk::TYPE_INT) && node->right()->is_typed(cdk::TYPE_POINTER)) {
+      node->type(node->right()->type());
+      return;
+    }
+  }
+
+  if (dynamic_cast<cdk::sub_node*>(node)) {
+    if (node->left()->is_typed(cdk::TYPE_POINTER) && node->right()->is_typed(cdk::TYPE_INT)) {
+      node->type(node->left()->type());
+      return;
+    }
+
+    if (node->left()->is_typed(cdk::TYPE_POINTER) && node->right()->is_typed(cdk::TYPE_POINTER)) {
+      auto lref = cdk::reference_type::cast(node->left()->type());
+      auto rref = cdk::reference_type::cast(node->right()->type());
+      if (lref && rref && lref->referenced() && rref->referenced() &&
+          lref->referenced()->name() == rref->referenced()->name()) {
+        node->type(cdk::primitive_type::create(4, cdk::TYPE_INT));
+        return;
+      }
+    }
+  }
+
+  if (node->left()->is_typed(cdk::TYPE_TENSOR) && node->right()->is_typed(cdk::TYPE_TENSOR)) {
+    auto ltype = cdk::tensor_type::cast(node->left()->type());
+    auto rtype = cdk::tensor_type::cast(node->right()->type());
+    if (!ltype || !rtype)
+      throw std::string("invalid tensor type in additive expression");
+    if (ltype->dims() != rtype->dims())
+      throw std::string("tensor shapes must match for coefficient-wise operation");
+    node->type(ltype);
+    return;
+  }
+
+  if (node->left()->is_typed(cdk::TYPE_TENSOR) &&
+      (node->right()->is_typed(cdk::TYPE_INT) || node->right()->is_typed(cdk::TYPE_DOUBLE))) {
+    node->type(node->left()->type());
+    return;
+  }
+
+  if ((node->left()->is_typed(cdk::TYPE_INT) || node->left()->is_typed(cdk::TYPE_DOUBLE)) &&
+      node->right()->is_typed(cdk::TYPE_TENSOR)) {
+    node->type(node->right()->type());
+    return;
+  }
+
+  throw std::string("wrong type in argument of additive expression");
+}
+
+void udf::type_checker::do_add_node(cdk::add_node *const node, int lvl) {
+  processAdditiveExpression(node, lvl);
+}
+void udf::type_checker::do_sub_node(cdk::sub_node *const node, int lvl) {
+  processAdditiveExpression(node, lvl);
+}
+
+//---------------------------------------------------------------------------
+
+void udf::type_checker::processMultiplicativeExpression(cdk::binary_operation_node *const node, int lvl) {
+  ASSERT_UNSPEC;
+  node->left()->accept(this, lvl + 2);
+  node->right()->accept(this, lvl + 2);
+
+  if (dynamic_cast<cdk::mod_node*>(node)) {
+    if (!node->left()->is_typed(cdk::TYPE_INT) || !node->right()->is_typed(cdk::TYPE_INT))
+      throw std::string("wrong type in argument of mod expression");
+    node->type(cdk::primitive_type::create(4, cdk::TYPE_INT));
+    return;
+  }
+
+  if ((node->left()->is_typed(cdk::TYPE_INT) || node->left()->is_typed(cdk::TYPE_DOUBLE)) &&
+      (node->right()->is_typed(cdk::TYPE_INT) || node->right()->is_typed(cdk::TYPE_DOUBLE))) {
+    if (node->left()->is_typed(cdk::TYPE_DOUBLE) || node->right()->is_typed(cdk::TYPE_DOUBLE))
+      node->type(cdk::primitive_type::create(8, cdk::TYPE_DOUBLE));
+    else
+      node->type(cdk::primitive_type::create(4, cdk::TYPE_INT));
+    return;
+  }
+
+  if ((node->left()->is_typed(cdk::TYPE_INT) || node->left()->is_typed(cdk::TYPE_DOUBLE)) &&
+      (node->right()->is_typed(cdk::TYPE_INT) || node->right()->is_typed(cdk::TYPE_DOUBLE))) {
+    if (node->left()->is_typed(cdk::TYPE_DOUBLE) || node->right()->is_typed(cdk::TYPE_DOUBLE))
+      node->type(cdk::primitive_type::create(8, cdk::TYPE_DOUBLE));
+    else
+      node->type(cdk::primitive_type::create(4, cdk::TYPE_INT));
+    return;
+  }
+
+  if (node->left()->is_typed(cdk::TYPE_TENSOR) && node->right()->is_typed(cdk::TYPE_TENSOR)) {
+    auto ltype = cdk::tensor_type::cast(node->left()->type());
+    auto rtype = cdk::tensor_type::cast(node->right()->type());
+    if (!ltype || !rtype)
+      throw std::string("invalid tensor type in multiplicative expression");
+    if (ltype->dims() != rtype->dims())
+      throw std::string("tensor shapes must match for coefficient-wise operation");
+    node->type(ltype);
+    return;
+  }
+
+  if (node->left()->is_typed(cdk::TYPE_TENSOR) &&
+      (node->right()->is_typed(cdk::TYPE_INT) || node->right()->is_typed(cdk::TYPE_DOUBLE))) {
+    node->type(node->left()->type());
+    return;
+  }
+
+  if ((node->left()->is_typed(cdk::TYPE_INT) || node->left()->is_typed(cdk::TYPE_DOUBLE)) &&
+      node->right()->is_typed(cdk::TYPE_TENSOR)) {
+    node->type(node->right()->type());
+    return;
+  }
+
+  throw std::string("wrong type in argument of multiplicative expression");
+}
+
+void udf::type_checker::do_mul_node(cdk::mul_node *const node, int lvl) {
+  processMultiplicativeExpression(node, lvl);
+}
+void udf::type_checker::do_div_node(cdk::div_node *const node, int lvl) {
+  processMultiplicativeExpression(node, lvl);
+}
+void udf::type_checker::do_mod_node(cdk::mod_node *const node, int lvl) {
+  processMultiplicativeExpression(node, lvl);
+}
+
+//---------------------------------------------------------------------------
+
+void udf::type_checker::processComparativeExpression(cdk::binary_operation_node *const node, int lvl) {
+  ASSERT_UNSPEC;
+  node->left()->accept(this, lvl + 2);
+  node->right()->accept(this, lvl + 2);
+
+  if ((node->left()->is_typed(cdk::TYPE_INT) || node->left()->is_typed(cdk::TYPE_DOUBLE)) &&
+      (node->right()->is_typed(cdk::TYPE_INT) || node->right()->is_typed(cdk::TYPE_DOUBLE))) {
+    node->type(cdk::primitive_type::create(4, cdk::TYPE_INT));
+    return;
+  }
+  throw std::string("wrong type in argument of comparative expression");
+}
+
+void udf::type_checker::do_lt_node(cdk::lt_node *const node, int lvl) {
+  processComparativeExpression(node, lvl);
+}
+void udf::type_checker::do_le_node(cdk::le_node *const node, int lvl) {
+  processComparativeExpression(node, lvl);
+}
+void udf::type_checker::do_ge_node(cdk::ge_node *const node, int lvl) {
+  processComparativeExpression(node, lvl);
+}
+void udf::type_checker::do_gt_node(cdk::gt_node *const node, int lvl) {
+  processComparativeExpression(node, lvl);
 }
 
 //---------------------------------------------------------------------------
@@ -270,6 +432,7 @@ void udf::type_checker::do_input_node(udf::input_node *const node, int lvl) {
 
 void udf::type_checker::do_for_node(udf::for_node *const node, int lvl) {
   //TODO: rever
+   _symtab.push();
   if (node->init()) {
     node->init()->accept(this, lvl + 2);
 
@@ -304,6 +467,8 @@ void udf::type_checker::do_for_node(udf::for_node *const node, int lvl) {
   // Corpo do for
   if (node->instruction())
     node->instruction()->accept(this, lvl + 2);
+  
+  _symtab.pop();
 }
 
 void udf::type_checker::do_break_node(udf::break_node *const node, int lvl) {
@@ -577,11 +742,9 @@ void udf::type_checker::do_tensor_index_node(udf::tensor_index_node *const node,
   if (!tensor_type)
     throw std::string("invalid tensor type in indexing");
 
-  // Verifica número de índices
   if (node->indexes()->size() != tensor_type->dims().size())
     throw std::string("number of indices does not match tensor rank");
 
-  // Verifica se todos os índices são inteiros
   for (size_t i = 0; i < node->indexes()->size(); ++i) {
     node->indexes()->node(i)->accept(this, lvl + 2);
     auto expr = dynamic_cast<cdk::expression_node*>(node->indexes()->node(i));
@@ -600,37 +763,57 @@ void udf::type_checker::do_tensor_rank_node(udf::tensor_rank_node *const node, i
 }
 
 void udf::type_checker::do_tensor_node(udf::tensor_node *const node, int lvl) {
-  ASSERT_UNSPEC;
-  // TODO: rever muito provavel estar errado:
-  struct Helper {
-    static void process(udf::type_checker *checker, cdk::sequence_node *seq, std::vector<size_t> &shape, size_t depth, int lvl) {
-      if (seq->size() == 0)
-        throw std::string("tensor dimensions must be > 0");
-      if (shape.size() <= depth)
-        shape.push_back(seq->size());
-      else if (shape[depth] != seq->size())
-        throw std::string("tensor is not rectangular");
-
-      for (size_t i = 0; i < seq->size(); ++i) {
-        auto val = seq->node(i);
-        auto tensor = dynamic_cast<udf::tensor_node*>(val);
-        if (tensor) {
-          process(checker, tensor->values(), shape, depth + 1, lvl);
-        } else {
-          // folha: deve ser int ou double
-          val->accept(checker, lvl + 2);
-          auto expr = dynamic_cast<cdk::expression_node*>(val);
-          if (!expr || (!expr->is_typed(cdk::TYPE_INT) && !expr->is_typed(cdk::TYPE_DOUBLE)))
-            throw std::string("tensor elements must be int or double");
-        }
-      }
-    }
-  };
+  /*ASSERT_UNSPEC;
 
   std::vector<size_t> shape;
-  Helper::process(this, node->values(), shape, 0, lvl);
+  cdk::sequence_node *seq = node->values();
 
-  node->type(cdk::tensor_type::create(shape));
+  while (seq) {
+    size_t sz = seq->size();
+    if (sz == 0)
+      throw std::string("tensor dimensions must be > 0");
+    shape.push_back(sz);
+
+    // Verifica se o próximo nível é também uma sequência
+    auto first = seq->node(0);
+    seq = dynamic_cast<cdk::sequence_node*>(first);
+  }
+
+  // 2. Verificar rectangularidade e tipos das folhas
+  // Usar uma stack para simular a travessia
+  struct Frame {
+    cdk::sequence_node *seq;
+    size_t depth;
+  };
+  
+  std::vector<Frame> stack;
+  stack.push_back({node->values(), 0});
+
+  while (!stack.empty()) {
+    auto [cur_seq, depth] = stack.back();
+    stack.pop_back();
+
+    if (cur_seq->size() != shape[depth])
+      throw std::string("tensor is not rectangular");
+
+    for (size_t i = 0; i < cur_seq->size(); ++i) {
+      auto n = cur_seq->node(i);
+      if (depth + 1 < shape.size()) {
+        auto inner = dynamic_cast<cdk::sequence_node*>(n);
+        if (!inner)
+          throw std::string("tensor is not rectangular");
+        stack.push_back({inner, depth + 1});
+      } else {
+        // folha: deve ser int ou double
+        n->accept(this, lvl + 2);
+        auto expr = dynamic_cast<cdk::expression_node*>(n);
+        if (!expr || (!expr->is_typed(cdk::TYPE_INT) && !expr->is_typed(cdk::TYPE_DOUBLE)))
+          throw std::string("tensor elements must be int or double");
+      }
+    }
+  }
+
+  node->type(cdk::tensor_type::create(shape));*/
 }
 
 void udf::type_checker::do_tensor_contraction_node(udf::tensor_contraction_node *const node, int lvl) {
@@ -656,7 +839,6 @@ void udf::type_checker::do_tensor_contraction_node(udf::tensor_contraction_node 
 
   if (dims1.back() != dims2.front())
     throw std::string("tensor contraction: last dimension of first tensor must match first dimension of second tensor");
-  //TODO:retornar?
 }
 
 void udf::type_checker::do_tensor_capacity_node(udf::tensor_capacity_node *const node, int lvl) {
