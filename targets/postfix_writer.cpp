@@ -646,25 +646,6 @@ void udf::postfix_writer::do_variable_declaration_node(udf::variable_declaration
           _pf.ALIGN();
           _pf.LABEL(id);
           node->initializer()->accept(this, lvl);
-        } else if (node->is_typed(cdk::TYPE_UNSPEC)) {
-          if (node->initializer()->is_typed(cdk::TYPE_INT)) {
-            _pf.DATA(); _pf.ALIGN(); _pf.LABEL(id);
-            node->initializer()->accept(this, lvl);
-          } else if (node->initializer()->is_typed(cdk::TYPE_DOUBLE)) {
-            _pf.DATA(); _pf.ALIGN(); _pf.LABEL(id);
-            node->initializer()->accept(this, lvl);
-          } else if (node->initializer()->is_typed(cdk::TYPE_STRING)) {
-            _pf.DATA(); _pf.ALIGN(); _pf.LABEL(id);
-            node->initializer()->accept(this, lvl);
-          } else if (node->initializer()->is_typed(cdk::TYPE_POINTER)) {
-            _pf.DATA(); _pf.ALIGN(); _pf.LABEL(id);
-            node->initializer()->accept(this, lvl);
-          } else if (node->initializer()->is_typed(cdk::TYPE_TENSOR)) {
-            // TODO: tratamento para tensor global
-          } else {
-            std::cerr << node->lineno() << ": '" << id << "' has unexpected initializer\n";
-            _errors = true;
-          }
         } else {
           std::cerr << node->lineno() << ": '" << id << "' has unexpected initializer\n";
           _errors = true;
