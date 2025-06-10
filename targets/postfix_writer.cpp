@@ -582,7 +582,8 @@ void udf::postfix_writer::do_variable_declaration_node(udf::variable_declaration
           _pf.I2D();
         _pf.LOCAL(symbol->offset());
         _pf.STDOUBLE();
-      } else if (node->is_typed(cdk::TYPE_STRUCT)) {
+      } else if (node->is_typed(cdk::TYPE_TENSOR)) {
+        _pf.LOCAL(symbol->offset());
         // single var initialized with tuple
         // TODO
       } else {

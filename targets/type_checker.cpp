@@ -771,58 +771,49 @@ void udf::type_checker::do_tensor_rank_node(udf::tensor_rank_node *const node, i
   node->type(cdk::primitive_type::create(4, cdk::TYPE_INT));
 }
 
-void udf::type_checker::do_tensor_node(udf::tensor_node *const node, int lvl) {
-  /*ASSERT_UNSPEC;
+static void validate_tensor_shape_and_type(cdk::sequence_node *seq, const std::vector<size_t> &shape, size_t depth, udf::type_checker *checker, int lvl) {
+  if (depth >= shape.size())
+    throw std::string("tensor shape mismatch: too many nesting levels");
 
-  std::vector<size_t> shape;
-  cdk::sequence_node *seq = node->values();
+  if (seq->size() != shape[depth])
+    throw std::string("tensor shape mismatch: wrong number of elements at depth " + std::to_string(depth));
 
-  while (seq) {
-    size_t sz = seq->size();
-    if (sz == 0)
-      throw std::string("tensor dimensions must be > 0");
-    shape.push_back(sz);
-
-    // Verifica se o próximo nível é também uma sequência
-    auto first = seq->node(0);
-    seq = dynamic_cast<cdk::sequence_node*>(first);
-  }
-
-  // 2. Verificar rectangularidade e tipos das folhas
-  // Usar uma stack para simular a travessia
-  struct Frame {
-    cdk::sequence_node *seq;
-    size_t depth;
-  };
-  
-  std::vector<Frame> stack;
-  stack.push_back({node->values(), 0});
-
-  while (!stack.empty()) {
-    auto [cur_seq, depth] = stack.back();
-    stack.pop_back();
-
-    if (cur_seq->size() != shape[depth])
-      throw std::string("tensor is not rectangular");
-
-    for (size_t i = 0; i < cur_seq->size(); ++i) {
-      auto n = cur_seq->node(i);
-      if (depth + 1 < shape.size()) {
-        auto inner = dynamic_cast<cdk::sequence_node*>(n);
-        if (!inner)
-          throw std::string("tensor is not rectangular");
-        stack.push_back({inner, depth + 1});
-      } else {
-        // folha: deve ser int ou double
-        n->accept(this, lvl + 2);
-        auto expr = dynamic_cast<cdk::expression_node*>(n);
-        if (!expr || (!expr->is_typed(cdk::TYPE_INT) && !expr->is_typed(cdk::TYPE_DOUBLE)))
-          throw std::string("tensor elements must be int or double");
-      }
+  for (size_t i = 0; i < seq->size(); ++i) {
+    auto node = seq->node(i);
+    if (depth + 1 == shape.size()) {
+      node->accept(checker, lvl + 2);
+      auto expr = dynamic_cast<cdk::expression_node*>(node);
+      if (!expr || (!expr->is_typed(cdk::TYPE_INT) && !expr->is_typed(cdk::TYPE_DOUBLE)))
+        throw std::string("tensor elements must be int or double at innermost depth");
+    } else {
+      // Other tensor_node in tensor
+      auto tensor_child = dynamic_cast<udf::tensor_node*>(node);
+      if (!tensor_child)
+        throw std::string("tensor shape mismatch: expected nested tensor at depth " + std::to_string(depth));
+      validate_tensor_shape_and_type(tensor_child->values(), shape, depth + 1, checker, lvl);
     }
   }
+}
 
-  node->type(cdk::tensor_type::create(shape));*/
+void udf::type_checker::do_tensor_node(udf::tensor_node *const node, int lvl) {
+  ASSERT_UNSPEC;
+
+  std::vector<size_t> shape;
+  const udf::tensor_node *current = node;
+
+  while (true) {
+    cdk::sequence_node *seq = current->values();
+    size_t sz = seq->size();
+    if (sz == 0) throw std::string("tensor dimensions must be > 0");
+    shape.push_back(sz);
+    auto first = seq->node(0);
+    auto tensor_child = dynamic_cast<udf::tensor_node*>(first);
+    if (!tensor_child) break;
+    current = tensor_child;
+  }
+
+  validate_tensor_shape_and_type(node->values(), shape, 0, this, lvl);
+  node->type(cdk::tensor_type::create(shape));
 }
 
 void udf::type_checker::do_tensor_contraction_node(udf::tensor_contraction_node *const node, int lvl) {
