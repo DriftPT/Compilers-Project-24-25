@@ -356,6 +356,7 @@ void udf::postfix_writer::do_input_node(udf::input_node * const node, int lvl) {
 
 void udf::postfix_writer::do_for_node(udf::for_node * const node, int lvl) {
   ASSERT_SAFE_EXPRESSIONS;
+  _symtab.push();
   int lbl1, lbl2, lbl3;
   node->init()->accept(this, lvl);
   _pf.LABEL(mklbl(lbl1 = ++_lbl));
@@ -366,7 +367,7 @@ void udf::postfix_writer::do_for_node(udf::for_node * const node, int lvl) {
   node->increment()->accept(this, lvl);
   _pf.JMP(mklbl(lbl1));
   _pf.LABEL(mklbl(lbl2));
-  //TODO
+  _symtab.pop();
 }
 
 void udf::postfix_writer::do_break_node(udf::break_node *const node, int lvl) {
