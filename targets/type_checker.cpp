@@ -313,6 +313,26 @@ void udf::type_checker::do_gt_node(cdk::gt_node *const node, int lvl) {
 
 //---------------------------------------------------------------------------
 
+//Function aux for verify tensor_node shape
+static std::vector<size_t> infer_tensor_shape(const udf::tensor_node *node) {
+  std::vector<size_t> shape;
+  const udf::tensor_node *current = node;
+
+  while (true) {
+    cdk::sequence_node *seq = current->values();
+    size_t sz = seq->size();
+    if (sz == 0) throw std::string("tensor dimensions must be > 0");
+    shape.push_back(sz);
+    auto first = seq->node(0);
+    auto tensor_child = dynamic_cast<udf::tensor_node*>(first);
+    if (!tensor_child) break;
+    current = tensor_child;
+  }
+  return shape;
+}
+
+//---------------------------------------------------------------------------
+
 void udf::type_checker::do_variable_node(cdk::variable_node *const node, int lvl) {
   ASSERT_UNSPEC;
   const std::string &id = node->name();
@@ -382,6 +402,13 @@ void udf::type_checker::do_assignment_node(cdk::assignment_node *const node, int
     }
   } else if (node->lvalue()->is_typed(cdk::TYPE_TENSOR)) {
     if (node->rvalue()->is_typed(cdk::TYPE_TENSOR)) {
+      auto tensor_type = cdk::tensor_type::cast(node->lvalue()->type());
+      auto tensor_init = dynamic_cast<udf::tensor_node*>(node->rvalue());
+      if (tensor_type && tensor_init) {
+        auto init_shape = infer_tensor_shape(tensor_init);
+        if (tensor_type->dims() != init_shape)
+          throw std::string("tensor assignment shape does not match variable shape");
+      }
       node->type(cdk::primitive_type::create(4, cdk::TYPE_TENSOR));
     } else if (node->rvalue()->is_typed(cdk::TYPE_UNSPEC)) {
       node->type(cdk::primitive_type::create(4, cdk::TYPE_TENSOR));
@@ -642,7 +669,6 @@ void udf::type_checker::do_function_declaration_node(udf::function_declaration_n
 
   std::shared_ptr<udf::symbol> previous = _symtab.find(function->name());
   if (previous) {
-    // TODO: Comparar tipos/assinaturas
     throw std::string("conflicting declaration for '" + function->name() + "'");
   } else {
     _symtab.insert(function->name(), function);
@@ -664,7 +690,7 @@ void udf::type_checker::do_variable_declaration_node(udf::variable_declaration_n
       if (!node->initializer()->is_typed(cdk::TYPE_STRING))
         throw std::string("wrong type for initializer (string expected).");
     } else if (node->is_typed(cdk::TYPE_POINTER)) {
-      if (!node->initializer()->is_typed(cdk::TYPE_POINTER)) {//TODO: rever FIXME
+      if (!node->initializer()->is_typed(cdk::TYPE_POINTER)) {
         auto in = dynamic_cast<cdk::literal_node<int>*>(node->initializer());
         if (in == nullptr || in->value() != 0)
           throw std::string("wrong type for initializer (pointer expected).");
@@ -672,6 +698,13 @@ void udf::type_checker::do_variable_declaration_node(udf::variable_declaration_n
     } else if (node->is_typed(cdk::TYPE_TENSOR)) {
       if (!node->initializer()->is_typed(cdk::TYPE_TENSOR))
         throw std::string("wrong type for initializer (tensor expected).");
+      auto tensor_type = cdk::tensor_type::cast(node->type());
+      auto tensor_init = dynamic_cast<udf::tensor_node*>(node->initializer());
+      if (tensor_type && tensor_init) {
+        auto init_shape = infer_tensor_shape(tensor_init);
+        if (tensor_type->dims() != init_shape)
+          throw std::string("tensor initializer shape does not match declared type");
+      }
     } else if (node->is_typed(cdk::TYPE_UNSPEC)) {
       auto init_type = node->initializer()->type();
       if (!init_type || init_type->name() == cdk::TYPE_UNSPEC)
@@ -777,20 +810,7 @@ static void validate_tensor_shape_and_type(cdk::sequence_node *seq, const std::v
 void udf::type_checker::do_tensor_node(udf::tensor_node *const node, int lvl) {
   ASSERT_UNSPEC;
 
-  std::vector<size_t> shape;
-  const udf::tensor_node *current = node;
-
-  while (true) {
-    cdk::sequence_node *seq = current->values();
-    size_t sz = seq->size();
-    if (sz == 0) throw std::string("tensor dimensions must be > 0");
-    shape.push_back(sz);
-    auto first = seq->node(0);
-    auto tensor_child = dynamic_cast<udf::tensor_node*>(first);
-    if (!tensor_child) break;
-    current = tensor_child;
-  }
-
+  std::vector<size_t> shape = infer_tensor_shape(node);
   validate_tensor_shape_and_type(node->values(), shape, 0, this, lvl);
   node->type(cdk::tensor_type::create(shape));
 }
@@ -812,7 +832,6 @@ void udf::type_checker::do_tensor_contraction_node(udf::tensor_contraction_node 
   const auto &dims1 = t1_type->dims();
   const auto &dims2 = t2_type->dims();
 
-  //TODO: será?
   if (dims1.empty() || dims2.empty())
     throw std::string("cannot contract tensors with zero dimensions");
 

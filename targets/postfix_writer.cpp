@@ -491,6 +491,17 @@ void udf::postfix_writer::do_print_node(udf::print_node * const node, int lvl) {
       _functions_to_declare.insert("tensor_print");
       _pf.CALL("tensor_print");
       _pf.TRASH(4); // trash pointer to tensor
+    } else if (etype->name() == cdk::TYPE_POINTER) { //TODO ERRADO
+      auto ref = cdk::reference_type::cast(etype);
+      if (ref && ref->referenced()->name() == cdk::TYPE_INT) {
+        _pf.LDINT(); // load the integer pointed to by the pointer
+        _functions_to_declare.insert("printi");
+        _pf.CALL("printi");
+        _pf.TRASH(4); // trash int
+      } else {
+        std::cerr << "cannot print expression of unknown pointer type" << std::endl;
+        return;
+      }
     } else {
       std::cerr << "cannot print expression of unknown type" << std::endl;
       return;
