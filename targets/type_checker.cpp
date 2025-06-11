@@ -793,7 +793,7 @@ void udf::type_checker::do_tensor_contraction_node(udf::tensor_contraction_node 
   if (dims1.back() != dims2.front())
     throw std::string("tensor contraction: last dimension of first tensor must match first dimension of second tensor");
   
-  node->type(cdk::tensor_type::create(std::vector<size_t>(dims1.begin(), dims2.end())));
+  node->type(cdk::tensor_type::create({dims1[0], dims2[1]}));
 }
 
 void udf::type_checker::do_tensor_capacity_node(udf::tensor_capacity_node *const node, int lvl) {
