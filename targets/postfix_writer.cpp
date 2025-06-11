@@ -652,7 +652,7 @@ void udf::postfix_writer::do_variable_declaration_node(udf::variable_declaration
         _pf.SALLOC(typesize);
       } else {
 
-        if (node->is_typed(cdk::TYPE_INT) || node->is_typed(cdk::TYPE_DOUBLE) || node->is_typed(cdk::TYPE_POINTER)|| node->is_typed(cdk::TYPE_TENSOR)) {
+        if (node->is_typed(cdk::TYPE_INT) || node->is_typed(cdk::TYPE_DOUBLE) || node->is_typed(cdk::TYPE_POINTER) || node->is_typed(cdk::TYPE_TENSOR)) {
           /*if (node->constant()) {
             _pf.RODATA();
           } else {
@@ -666,8 +666,6 @@ void udf::postfix_writer::do_variable_declaration_node(udf::variable_declaration
             node->initializer()->accept(this, lvl);
           } else if (node->is_typed(cdk::TYPE_POINTER)) {
             node->initializer()->accept(this, lvl);
-          }  else if (node->is_typed(cdk::TYPE_TENSOR)) {
-            node->initializer()->accept(this, lvl);
           }  else if (node->is_typed(cdk::TYPE_DOUBLE)) {
             if (node->initializer()->is_typed(cdk::TYPE_DOUBLE)) {
               node->initializer()->accept(this, lvl);
@@ -679,24 +677,10 @@ void udf::postfix_writer::do_variable_declaration_node(udf::variable_declaration
               std::cerr << node->lineno() << ": '" << id << "' has bad initializer for real value\n";
               _errors = true;
             }
+          } else if (node->is_typed(cdk::TYPE_TENSOR)) {
+            node->initializer()->accept(this, lvl);
           }
         } else if (node->is_typed(cdk::TYPE_STRING)) {
-          /*if (node->constant()) {
-            int litlbl;
-            // HACK!!! string literal initializers must be emitted before the string identifier
-            _pf.RODATA();
-            _pf.ALIGN();
-            _pf.LABEL(mklbl(litlbl = ++_lbl));
-            _pf.SSTRING(dynamic_cast<cdk::string_node*>(node->initializer())->value());
-            _pf.ALIGN();
-            _pf.LABEL(id);
-            _pf.SADDR(mklbl(litlbl));
-          } else {
-            _pf.DATA();
-            _pf.ALIGN();
-            _pf.LABEL(id);
-            node->initializer()->accept(this, lvl);
-          }*/ // Pensar nisto
           _pf.DATA();
           _pf.ALIGN();
           _pf.LABEL(id);
@@ -741,7 +725,9 @@ void udf::postfix_writer::do_tensor_index_node(udf::tensor_index_node * const no
 }
 
 void udf::postfix_writer::do_tensor_rank_node(udf::tensor_rank_node * const node, int lvl) {
-  //TODO
+  ASSERT_SAFE_EXPRESSIONS;
+  node->tensor()->accept(this, lvl);
+  _pf.LDINT();
 }
 
 void udf::postfix_writer::do_tensor_node(udf::tensor_node * const node, int lvl) {
@@ -799,7 +785,12 @@ void udf::postfix_writer::do_tensor_contraction_node(udf::tensor_contraction_nod
 }
 
 void udf::postfix_writer::do_tensor_capacity_node(udf::tensor_capacity_node * const node, int lvl) {
-  //TODO
+  ASSERT_SAFE_EXPRESSIONS;
+  node->tensor()->accept(this, lvl);
+  _functions_to_declare.insert("tensor_size");
+  _pf.CALL("tensor_size");
+  _pf.TRASH(4);
+  _pf.LDFVAL32();
 }
 
 void udf::postfix_writer::do_tensor_dim_node(udf::tensor_dim_node * const node, int lvl) {
