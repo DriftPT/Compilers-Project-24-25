@@ -711,11 +711,33 @@ void udf::postfix_writer::do_variable_declaration_node(udf::variable_declaration
 }
 
 void udf::postfix_writer::do_tensor_reshape_node(udf::tensor_reshape_node * const node, int lvl) {
-  //TODO
+  ASSERT_SAFE_EXPRESSIONS;
+
+  // Push each dimension value onto the stack
+  for (int i = node->dimensions()->size() - 1; i >= 0; --i) {
+    auto expr = dynamic_cast<cdk::expression_node*>(node->dimensions()->node(i));
+    expr->accept(this, lvl + 2);
+  }
+  _pf.INT(node->dimensions()->size()); // number of dimensions
+  node->tensor()->accept(this, lvl + 2);
+
+  _functions_to_declare.insert("tensor_reshape");
+  _pf.CALL("tensor_reshape");
+  _pf.TRASH(4 * (node->dimensions()->size() + 1)); // remove arguments (dimensions + tensor pointer)
+  _pf.LDFVAL32();
 }
 
 void udf::postfix_writer::do_tensor_index_node(udf::tensor_index_node * const node, int lvl) {
-  //TODO
+  for (int i = node->indexes()->size() - 1; i >= 0; --i) {
+    auto expr = dynamic_cast<cdk::expression_node*>(node->indexes()->node(i));
+    expr->accept(this, lvl + 2);
+  }
+  node->tensor()->accept(this, lvl + 2);
+
+  _functions_to_declare.insert("tensor_getptr");
+  _pf.CALL("tensor_getptr");
+  _pf.TRASH(4 * (node->indexes()->size()) + 1); // remove arguments (dimensions + tensor pointer)
+  _pf.LDFVAL32();
 }
 
 void udf::postfix_writer::do_tensor_rank_node(udf::tensor_rank_node * const node, int lvl) {
@@ -781,9 +803,17 @@ void udf::postfix_writer::do_tensor_capacity_node(udf::tensor_capacity_node * co
 }
 
 void udf::postfix_writer::do_tensor_dim_node(udf::tensor_dim_node * const node, int lvl) {
-  //TODO
+  node->tensor()->accept(this, lvl + 2);
+  _functions_to_declare.insert("tensor_dims");
+  _pf.CALL("tensor_dims");
+  _pf.TRASH(4); // remove argument (pointer to tensor)
+  _pf.LDFVAL32(); // return value is a pointer to an array of dimensions
 }
 
 void udf::postfix_writer::do_tensor_dims_node(udf::tensor_dims_node * const node, int lvl) {
-  //TODO
+  node->tensor()->accept(this, lvl + 2);
+  _functions_to_declare.insert("tensor_get_dim_size");
+  _pf.CALL("tensor_get_dim_size");
+  _pf.TRASH(4); // remove argument (pointer to tensor)
+  _pf.LDFVAL32(); // return value is a pointer to an array of dimensions
 }
