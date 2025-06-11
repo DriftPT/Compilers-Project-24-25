@@ -1,5 +1,6 @@
 #include <string>
 #include <sstream>
+#include <functional>
 //#include <memory> TODO: check if needed
 #include <cdk/types/types.h>
 #include "targets/type_checker.h"
@@ -721,22 +722,46 @@ void udf::postfix_writer::do_tensor_rank_node(udf::tensor_rank_node * const node
 
 void udf::postfix_writer::do_tensor_node(udf::tensor_node * const node, int lvl) {
   // 1. Determina a shape do tensor
-  auto tensor_type = std::dynamic_pointer_cast<cdk::tensor_type>(node->type());
+  auto tensor_type = cdk::tensor_type::cast(node->type());
   const auto &dims = tensor_type->dims();
 
    // Empilha as dimensões da última para a primeira
   for (auto it = dims.rbegin(); it != dims.rend(); ++it) {
     _pf.INT(*it);
-    std::cout << "Pushed to stack: " << *it << std::endl;
   }
   // Depois empilha o número de dimensões
   _pf.INT(dims.size());
-  std::cout << "Pushed to stack: " << dims.size() << std::endl;
-  // 3. Chama tensor_create
+  
   _functions_to_declare.insert("tensor_create");
   _pf.CALL("tensor_create");
   _pf.TRASH(4 * (dims.size() + 1)); // remove argumentos
   _pf.LDFVAL32();
+
+  std::function<void(cdk::sequence_node*, size_t&, int)> emit_tensor_values;
+  emit_tensor_values = [&](cdk::sequence_node *seq, size_t &idx, int lvl) {
+    for (size_t i = 0; i < seq->size(); ++i) {
+      auto nodeptr = seq->node(i);
+      if (auto tnode = dynamic_cast<udf::tensor_node*>(nodeptr)) {
+        emit_tensor_values(tnode->values(), idx, lvl);
+      } else {
+        _pf.DUP32(); // tensor pointer
+        _pf.INT(idx); // linear index
+        
+        auto expr = dynamic_cast<cdk::expression_node*>(nodeptr);
+        expr->accept(this, lvl); // tensor value
+        if (expr->is_typed(cdk::TYPE_INT)) {
+          _pf.I2D(); 
+        } 
+        _functions_to_declare.insert("tensor_put");
+        _pf.CALL("tensor_put");
+        _pf.TRASH(12); // 3 argments * 4 bytes
+        ++idx;
+      }
+    }
+  };
+
+  size_t idx = 0;
+  emit_tensor_values(node->values(), idx, lvl);
 }
 
 void udf::postfix_writer::do_tensor_contraction_node(udf::tensor_contraction_node * const node, int lvl) {
