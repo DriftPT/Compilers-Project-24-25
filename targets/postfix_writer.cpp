@@ -627,7 +627,7 @@ void udf::postfix_writer::do_variable_declaration_node(udf::variable_declaration
     // unless an initializer exists
     if (node->initializer()) {
       node->initializer()->accept(this, lvl);
-      if (node->is_typed(cdk::TYPE_INT) || node->is_typed(cdk::TYPE_STRING) || node->is_typed(cdk::TYPE_POINTER)) {
+      if (node->is_typed(cdk::TYPE_INT) || node->is_typed(cdk::TYPE_STRING) || node->is_typed(cdk::TYPE_POINTER) || node->is_typed(cdk::TYPE_TENSOR)) {
         _pf.LOCAL(symbol->offset());
         _pf.STINT();
       } else if (node->is_typed(cdk::TYPE_DOUBLE)) {
@@ -637,8 +637,8 @@ void udf::postfix_writer::do_variable_declaration_node(udf::variable_declaration
         _pf.STDOUBLE();
       } else if (node->is_typed(cdk::TYPE_TENSOR)) {
         _pf.LOCAL(symbol->offset());
-        // single var initialized with tuple
-        // TODO
+        _pf.STINT();
+
       } else {
         std::cerr << "cannot initialize" << std::endl;
       }
@@ -652,7 +652,7 @@ void udf::postfix_writer::do_variable_declaration_node(udf::variable_declaration
         _pf.SALLOC(typesize);
       } else {
 
-        if (node->is_typed(cdk::TYPE_INT) || node->is_typed(cdk::TYPE_DOUBLE) || node->is_typed(cdk::TYPE_POINTER)) {
+        if (node->is_typed(cdk::TYPE_INT) || node->is_typed(cdk::TYPE_DOUBLE) || node->is_typed(cdk::TYPE_POINTER)|| node->is_typed(cdk::TYPE_TENSOR)) {
           /*if (node->constant()) {
             _pf.RODATA();
           } else {
@@ -666,7 +666,9 @@ void udf::postfix_writer::do_variable_declaration_node(udf::variable_declaration
             node->initializer()->accept(this, lvl);
           } else if (node->is_typed(cdk::TYPE_POINTER)) {
             node->initializer()->accept(this, lvl);
-          } else if (node->is_typed(cdk::TYPE_DOUBLE)) {
+          }  else if (node->is_typed(cdk::TYPE_TENSOR)) {
+            node->initializer()->accept(this, lvl);
+          }  else if (node->is_typed(cdk::TYPE_DOUBLE)) {
             if (node->initializer()->is_typed(cdk::TYPE_DOUBLE)) {
               node->initializer()->accept(this, lvl);
             } else if (node->initializer()->is_typed(cdk::TYPE_INT)) {
