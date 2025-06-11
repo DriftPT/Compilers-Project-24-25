@@ -160,7 +160,30 @@ void udf::type_checker::processAdditiveExpression(cdk::binary_operation_node *co
       if (lref && rref && lref->referenced() && rref->referenced() &&
           lref->referenced()->name() == rref->referenced()->name()) {
         node->type(cdk::primitive_type::create(4, cdk::TYPE_INT));
+        return;
       }
+    }
+    // Handle tensor - tensor for sub_node (coefficient-wise subtraction)
+    if (node->left()->is_typed(cdk::TYPE_TENSOR) && node->right()->is_typed(cdk::TYPE_TENSOR)) {
+      auto ltype = cdk::tensor_type::cast(node->left()->type());
+      auto rtype = cdk::tensor_type::cast(node->right()->type());
+      if (!ltype || !rtype)
+      throw std::string("invalid tensor type in additive expression");
+      if (ltype->dims() != rtype->dims())
+      throw std::string("tensor shapes must match for coefficient-wise operation");
+      node->type(ltype);
+      return;
+    }
+    // Handle tensor - scalar and scalar - tensor for sub_node as well
+    if (node->left()->is_typed(cdk::TYPE_TENSOR) &&
+      (node->right()->is_typed(cdk::TYPE_INT) || node->right()->is_typed(cdk::TYPE_DOUBLE))) {
+      node->type(node->left()->type());
+      return;
+    }
+    if ((node->left()->is_typed(cdk::TYPE_INT) || node->left()->is_typed(cdk::TYPE_DOUBLE)) &&
+      node->right()->is_typed(cdk::TYPE_TENSOR)) {
+      node->type(node->right()->type());
+      return;
     }
   } else if (node->left()->is_typed(cdk::TYPE_TENSOR) && node->right()->is_typed(cdk::TYPE_TENSOR)) {
     auto ltype = cdk::tensor_type::cast(node->left()->type());

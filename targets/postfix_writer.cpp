@@ -114,6 +114,44 @@ void udf::postfix_writer::do_unary_plus_node(cdk::unary_plus_node * const node, 
 
 void udf::postfix_writer::do_add_node(cdk::add_node * const node, int lvl) {
   ASSERT_SAFE_EXPRESSIONS;
+
+  // Check if one operand is tensor and the other is scalar (int or double)
+  bool left_tensor = node->left()->type()->name() == cdk::TYPE_TENSOR;
+  bool right_tensor = node->right()->type()->name() == cdk::TYPE_TENSOR;
+
+  if (left_tensor && !right_tensor) {
+    // tensor * scalar
+    node->right()->accept(this, lvl + 2);
+    if (node->right()->type()->name() == cdk::TYPE_INT)
+      _pf.I2D(); // convert int to double if needed
+    node->left()->accept(this, lvl + 2);
+    _functions_to_declare.insert("tensor_add_scalar");
+    _pf.CALL("tensor_add_scalar");
+    _pf.TRASH(8); // scalar (double) + tensor pointer
+    _pf.LDFVAL32();
+    return;
+  } else if (!left_tensor && right_tensor) {
+    // scalar * tensor
+    node->left()->accept(this, lvl + 2);
+    if (node->left()->type()->name() == cdk::TYPE_INT)
+      _pf.I2D(); // convert int to double if needed
+    node->right()->accept(this, lvl + 2);
+    _functions_to_declare.insert("tensor_add_scalar");
+    _pf.CALL("tensor_add_scalar");
+    _pf.TRASH(8); // scalar (double) + tensor pointer
+    _pf.LDFVAL32();
+    return;
+  } else if (left_tensor && right_tensor) {
+    // tensor * tensor
+    node->left()->accept(this, lvl + 2);
+    node->right()->accept(this, lvl + 2);
+    _functions_to_declare.insert("tensor_add");
+    _pf.CALL("tensor_add");
+    _pf.TRASH(8); // two tensor pointers
+    _pf.LDFVAL32();
+    return;
+  } 
+
   node->left()->accept(this, lvl + 2);
   if (node->type()->name() == cdk::TYPE_DOUBLE && node->left()->type()->name() == cdk::TYPE_INT) {
     _pf.I2D();
@@ -140,6 +178,33 @@ void udf::postfix_writer::do_add_node(cdk::add_node * const node, int lvl) {
 
 void udf::postfix_writer::do_sub_node(cdk::sub_node * const node, int lvl) {
   ASSERT_SAFE_EXPRESSIONS;
+
+  // Check if one operand is tensor and the other is scalar (int or double)
+  bool left_tensor = node->left()->type()->name() == cdk::TYPE_TENSOR;
+  bool right_tensor = node->right()->type()->name() == cdk::TYPE_TENSOR;
+
+  if (left_tensor && !right_tensor) {
+    // tensor - scalar
+    node->right()->accept(this, lvl + 2);
+    if (node->right()->type()->name() == cdk::TYPE_INT)
+      _pf.I2D(); // convert int to double if needed
+    node->left()->accept(this, lvl + 2);
+    _functions_to_declare.insert("tensor_sub_scalar");
+    _pf.CALL("tensor_sub_scalar");
+    _pf.TRASH(8); // scalar (double) + tensor pointer
+    _pf.LDFVAL32();
+    return;
+  } else if (left_tensor && right_tensor) {
+    // tensor - tensor
+    node->left()->accept(this, lvl + 2);
+    node->right()->accept(this, lvl + 2);
+    _functions_to_declare.insert("tensor_sub");
+    _pf.CALL("tensor_sub");
+    _pf.TRASH(8); // two tensor pointers
+    _pf.LDFVAL32();
+    return;
+  } 
+
   node->left()->accept(this, lvl + 2);
   if (node->type()->name() == cdk::TYPE_DOUBLE && node->left()->type()->name() == cdk::TYPE_INT) _pf.I2D();
 
@@ -160,6 +225,44 @@ void udf::postfix_writer::do_sub_node(cdk::sub_node * const node, int lvl) {
 
 void udf::postfix_writer::do_mul_node(cdk::mul_node * const node, int lvl) {
   ASSERT_SAFE_EXPRESSIONS;
+
+  // Check if one operand is tensor and the other is scalar (int or double)
+  bool left_tensor = node->left()->type()->name() == cdk::TYPE_TENSOR;
+  bool right_tensor = node->right()->type()->name() == cdk::TYPE_TENSOR;
+
+  if (left_tensor && !right_tensor) {
+    // tensor * scalar
+    node->right()->accept(this, lvl + 2);
+    if (node->right()->type()->name() == cdk::TYPE_INT)
+      _pf.I2D(); // convert int to double if needed
+    node->left()->accept(this, lvl + 2);
+    _functions_to_declare.insert("tensor_mul_scalar");
+    _pf.CALL("tensor_mul_scalar");
+    _pf.TRASH(8); // scalar (double) + tensor pointer
+    _pf.LDFVAL32();
+    return;
+  } else if (!left_tensor && right_tensor) {
+    // scalar * tensor
+    node->left()->accept(this, lvl + 2);
+    if (node->left()->type()->name() == cdk::TYPE_INT)
+      _pf.I2D(); // convert int to double if needed
+    node->right()->accept(this, lvl + 2);
+    _functions_to_declare.insert("tensor_mul_scalar");
+    _pf.CALL("tensor_mul_scalar");
+    _pf.TRASH(8); // scalar (double) + tensor pointer
+    _pf.LDFVAL32();
+    return;
+  } else if (left_tensor && right_tensor) {
+    // tensor * tensor
+    node->left()->accept(this, lvl + 2);
+    node->right()->accept(this, lvl + 2);
+    _functions_to_declare.insert("tensor_mul");
+    _pf.CALL("tensor_mul");
+    _pf.TRASH(8); // two tensor pointers
+    _pf.LDFVAL32();
+    return;
+  } 
+
   node->left()->accept(this, lvl + 2);
   if (node->type()->name() == cdk::TYPE_DOUBLE && node->left()->type()->name() == cdk::TYPE_INT) _pf.I2D();
 
@@ -172,6 +275,32 @@ void udf::postfix_writer::do_mul_node(cdk::mul_node * const node, int lvl) {
     _pf.MUL();
 }
 void udf::postfix_writer::do_div_node(cdk::div_node * const node, int lvl) {
+  // Check if one operand is tensor and the other is scalar (int or double)
+  bool left_tensor = node->left()->type()->name() == cdk::TYPE_TENSOR;
+  bool right_tensor = node->right()->type()->name() == cdk::TYPE_TENSOR;
+
+  if (left_tensor && !right_tensor) {
+    // tensor / scalar
+    node->right()->accept(this, lvl + 2);
+    if (node->right()->type()->name() == cdk::TYPE_INT)
+      _pf.I2D(); // convert int to double if needed
+    node->left()->accept(this, lvl + 2);
+    _functions_to_declare.insert("tensor_div_scalar");
+    _pf.CALL("tensor_div_scalar");
+    _pf.TRASH(8); // scalar (double) + tensor pointer
+    _pf.LDFVAL32();
+    return;
+  } else if (left_tensor && right_tensor) {
+    // tensor / tensor
+    node->left()->accept(this, lvl + 2);
+    node->right()->accept(this, lvl + 2);
+    _functions_to_declare.insert("tensor_div");
+    _pf.CALL("tensor_div");
+    _pf.TRASH(8); // two tensor pointers
+    _pf.LDFVAL32();
+    return;
+  }
+
   node->left()->accept(this, lvl + 2);
   if (node->type()->name() == cdk::TYPE_DOUBLE && node->left()->type()->name() == cdk::TYPE_INT) _pf.I2D();
 
@@ -231,6 +360,22 @@ void udf::postfix_writer::do_gt_node(cdk::gt_node * const node, int lvl) {
 }
 void udf::postfix_writer::do_ne_node(cdk::ne_node * const node, int lvl) {
   ASSERT_SAFE_EXPRESSIONS;
+
+  bool left_tensor = node->left()->type()->name() == cdk::TYPE_TENSOR;
+  bool right_tensor = node->right()->type()->name() == cdk::TYPE_TENSOR;
+
+  if (left_tensor && right_tensor) {
+    node->left()->accept(this, lvl + 2);
+    node->right()->accept(this, lvl + 2);
+    _functions_to_declare.insert("tensor_equals");
+    _pf.CALL("tensor_equals");
+    _pf.TRASH(8); // two tensor pointers
+    _pf.LDFVAL32();
+    // invert result: if tensor_equals returns 0, push 1; if returns 1, push 0
+    _pf.INT(0);
+    _pf.EQ();
+    return;
+  }
   node->left()->accept(this, lvl + 2);
   if (node->left()->type()->name() == cdk::TYPE_INT && node->right()->type()->name() == cdk::TYPE_DOUBLE) _pf.I2D();
 
@@ -241,6 +386,22 @@ void udf::postfix_writer::do_ne_node(cdk::ne_node * const node, int lvl) {
 }
 void udf::postfix_writer::do_eq_node(cdk::eq_node * const node, int lvl) {
   ASSERT_SAFE_EXPRESSIONS;
+
+  // Support tensor == tensor using tensor_equals
+  bool left_tensor = node->left()->type()->name() == cdk::TYPE_TENSOR;
+  bool right_tensor = node->right()->type()->name() == cdk::TYPE_TENSOR;
+
+  if (left_tensor && right_tensor) {
+    node->left()->accept(this, lvl + 2);
+    node->right()->accept(this, lvl + 2);
+    _functions_to_declare.insert("tensor_equals");
+    _pf.CALL("tensor_equals");
+    _pf.TRASH(8); // two tensor pointers
+    _pf.LDFVAL32();
+    // tensor_equals returns 1 if equal, 0 otherwise
+    return;
+  }
+
   node->left()->accept(this, lvl + 2);
   if (node->left()->type()->name() == cdk::TYPE_INT && node->right()->type()->name() == cdk::TYPE_DOUBLE) _pf.I2D();
 
@@ -720,7 +881,7 @@ void udf::postfix_writer::do_tensor_index_node(udf::tensor_index_node * const no
 
   _functions_to_declare.insert("tensor_getptr");
   _pf.CALL("tensor_getptr");
-  _pf.TRASH(4 * (node->indexes()->size()) + 1); // remove arguments (dimensions + tensor pointer)
+  _pf.TRASH(4 * (node->indexes()->size())); // remove arguments (dimensions + tensor pointer)
   _pf.LDFVAL32();
 }
 
@@ -794,6 +955,8 @@ void udf::postfix_writer::do_tensor_capacity_node(udf::tensor_capacity_node * co
 }
 
 void udf::postfix_writer::do_tensor_dim_node(udf::tensor_dim_node * const node, int lvl) {
+  ASSERT_SAFE_EXPRESSIONS;
+  node->index()->accept(this, lvl + 2); // get dimension index
   node->tensor()->accept(this, lvl + 2);
   _functions_to_declare.insert("tensor_get_dim_size");
   _pf.CALL("tensor_get_dim_size");
@@ -802,6 +965,7 @@ void udf::postfix_writer::do_tensor_dim_node(udf::tensor_dim_node * const node, 
 }
 
 void udf::postfix_writer::do_tensor_dims_node(udf::tensor_dims_node * const node, int lvl) {
+  ASSERT_SAFE_EXPRESSIONS;
   node->tensor()->accept(this, lvl + 2);
   _functions_to_declare.insert("tensor_get_dims");
   _pf.CALL("tensor_get_dims");
