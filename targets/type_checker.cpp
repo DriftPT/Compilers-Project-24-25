@@ -681,16 +681,19 @@ void udf::type_checker::do_tensor_reshape_node(udf::tensor_reshape_node *const n
   size_t original_capacity = tensor_type->size();
 
   size_t new_capacity = 1;
+  std::vector<size_t> new_dims;
   for (size_t i = 0; i < node->dimensions()->size(); ++i) {
     auto dim_node = dynamic_cast<cdk::integer_node*>(node->dimensions()->node(i));
     if (!dim_node || dim_node->value() <= 0)
       throw std::string("reshape dimensions must be positive integer literals");
+    new_dims.push_back(dim_node->value());
     new_capacity *= dim_node->value();
   }
 
   if (original_capacity != new_capacity)
     throw std::string("reshape dimensions do not match tensor capacity");
-  //TODO:retornar?
+  
+  node->type(cdk::tensor_type::create(new_dims));
 }
 
 void udf::type_checker::do_tensor_index_node(udf::tensor_index_node *const node, int lvl) {
@@ -793,7 +796,7 @@ void udf::type_checker::do_tensor_contraction_node(udf::tensor_contraction_node 
   if (dims1.back() != dims2.front())
     throw std::string("tensor contraction: last dimension of first tensor must match first dimension of second tensor");
   
-  node->type(cdk::tensor_type::create({dims1[0], dims2[1]}));
+  node->type(cdk::tensor_type::create({dims1[0], dims2[t2_type->n_dims() - 1]}));
 }
 
 void udf::type_checker::do_tensor_capacity_node(udf::tensor_capacity_node *const node, int lvl) {
