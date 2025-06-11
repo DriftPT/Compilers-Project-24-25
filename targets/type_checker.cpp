@@ -141,44 +141,28 @@ void udf::type_checker::processAdditiveExpression(cdk::binary_operation_node *co
   node->left()->accept(this, lvl + 2);
   node->right()->accept(this, lvl + 2);
 
-  if ((node->left()->is_typed(cdk::TYPE_INT) || node->left()->is_typed(cdk::TYPE_DOUBLE)) &&
-      (node->right()->is_typed(cdk::TYPE_INT) || node->right()->is_typed(cdk::TYPE_DOUBLE))) {
-    if (node->left()->is_typed(cdk::TYPE_DOUBLE) || node->right()->is_typed(cdk::TYPE_DOUBLE))
-      node->type(cdk::primitive_type::create(8, cdk::TYPE_DOUBLE));
-    else
-      node->type(cdk::primitive_type::create(4, cdk::TYPE_INT));
-    return;
-  }
-
-  if (dynamic_cast<cdk::add_node*>(node)) {
-    if (node->left()->is_typed(cdk::TYPE_POINTER) && node->right()->is_typed(cdk::TYPE_INT)) {
-      node->type(node->left()->type());
-      return;
-    }
-    if (node->left()->is_typed(cdk::TYPE_INT) && node->right()->is_typed(cdk::TYPE_POINTER)) {
-      node->type(node->right()->type());
-      return;
-    }
-  }
-
-  if (dynamic_cast<cdk::sub_node*>(node)) {
-    if (node->left()->is_typed(cdk::TYPE_POINTER) && node->right()->is_typed(cdk::TYPE_INT)) {
-      node->type(node->left()->type());
-      return;
-    }
-
+  if (node->left()->is_typed(cdk::TYPE_DOUBLE) && node->right()->is_typed(cdk::TYPE_DOUBLE)) {
+    node->type(cdk::primitive_type::create(8, cdk::TYPE_DOUBLE));
+  } else if (node->left()->is_typed(cdk::TYPE_DOUBLE) && node->right()->is_typed(cdk::TYPE_INT)) {
+    node->type(cdk::primitive_type::create(8, cdk::TYPE_DOUBLE));
+  } else if (node->left()->is_typed(cdk::TYPE_INT) && node->right()->is_typed(cdk::TYPE_DOUBLE)) {
+    node->type(cdk::primitive_type::create(8, cdk::TYPE_DOUBLE));
+  } else if (node->left()->is_typed(cdk::TYPE_INT) && node->right()->is_typed(cdk::TYPE_INT)) {
+    node->type(cdk::primitive_type::create(4, cdk::TYPE_INT));
+  } else if (node->left()->is_typed(cdk::TYPE_POINTER) && node->right()->is_typed(cdk::TYPE_INT)) {
+    node->type(node->left()->type());
+  } else if (node->left()->is_typed(cdk::TYPE_INT) && node->right()->is_typed(cdk::TYPE_POINTER)) {
+    node->type(node->right()->type());
+  } else if (dynamic_cast<cdk::sub_node*>(node)) {
     if (node->left()->is_typed(cdk::TYPE_POINTER) && node->right()->is_typed(cdk::TYPE_POINTER)) {
       auto lref = cdk::reference_type::cast(node->left()->type());
       auto rref = cdk::reference_type::cast(node->right()->type());
       if (lref && rref && lref->referenced() && rref->referenced() &&
           lref->referenced()->name() == rref->referenced()->name()) {
         node->type(cdk::primitive_type::create(4, cdk::TYPE_INT));
-        return;
       }
     }
-  }
-
-  if (node->left()->is_typed(cdk::TYPE_TENSOR) && node->right()->is_typed(cdk::TYPE_TENSOR)) {
+  } else if (node->left()->is_typed(cdk::TYPE_TENSOR) && node->right()->is_typed(cdk::TYPE_TENSOR)) {
     auto ltype = cdk::tensor_type::cast(node->left()->type());
     auto rtype = cdk::tensor_type::cast(node->right()->type());
     if (!ltype || !rtype)
@@ -186,22 +170,19 @@ void udf::type_checker::processAdditiveExpression(cdk::binary_operation_node *co
     if (ltype->dims() != rtype->dims())
       throw std::string("tensor shapes must match for coefficient-wise operation");
     node->type(ltype);
-    return;
-  }
-
-  if (node->left()->is_typed(cdk::TYPE_TENSOR) &&
+  } else if (node->left()->is_typed(cdk::TYPE_TENSOR) &&
       (node->right()->is_typed(cdk::TYPE_INT) || node->right()->is_typed(cdk::TYPE_DOUBLE))) {
     node->type(node->left()->type());
-    return;
-  }
-
-  if ((node->left()->is_typed(cdk::TYPE_INT) || node->left()->is_typed(cdk::TYPE_DOUBLE)) &&
+  } else if ((node->left()->is_typed(cdk::TYPE_INT) || node->left()->is_typed(cdk::TYPE_DOUBLE)) &&
       node->right()->is_typed(cdk::TYPE_TENSOR)) {
     node->type(node->right()->type());
-    return;
+  } else if (node->left()->is_typed(cdk::TYPE_UNSPEC) && node->right()->is_typed(cdk::TYPE_UNSPEC)) {
+    node->type(cdk::primitive_type::create(4, cdk::TYPE_INT));
+    node->left()->type(cdk::primitive_type::create(4, cdk::TYPE_INT));
+    node->right()->type(cdk::primitive_type::create(4, cdk::TYPE_INT));
+  } else {
+    throw std::string("wrong type in argument of additive expression");
   }
-
-  throw std::string("wrong type in argument of additive expression");
 }
 
 void udf::type_checker::do_add_node(cdk::add_node *const node, int lvl) {
@@ -331,87 +312,63 @@ void udf::type_checker::do_assignment_node(cdk::assignment_node *const node, int
   node->lvalue()->accept(this, lvl + 4);
   node->rvalue()->accept(this, lvl + 4);
 
-  auto ltype = node->lvalue()->type();
-  auto rtype = node->rvalue()->type();
-
-  if (!ltype || !rtype)
-    throw std::string("cannot determine type in assignment");
-
-  // INT to INT
-  if (ltype->name() == cdk::TYPE_INT) {
-    if (rtype->name() == cdk::TYPE_INT) {
-      node->type(ltype);
-    } else if (rtype->name() == cdk::TYPE_UNSPEC) {
-      node->type(ltype);
-      node->rvalue()->type(ltype);
+  if (node->lvalue()->is_typed(cdk::TYPE_INT)) {
+    if (node->rvalue()->is_typed(cdk::TYPE_INT)) {
+      node->type(cdk::primitive_type::create(4, cdk::TYPE_INT));
+    } else if (node->rvalue()->is_typed(cdk::TYPE_UNSPEC)) {
+      node->type(cdk::primitive_type::create(4, cdk::TYPE_INT));
+      node->rvalue()->type(cdk::primitive_type::create(4, cdk::TYPE_INT));
     } else {
       throw std::string("wrong assignment to integer");
-    }
-    return;
-  }
-
-  // DOUBLE to DOUBLE or INT
-  if (ltype->name() == cdk::TYPE_DOUBLE) {
-    if (rtype->name() == cdk::TYPE_DOUBLE || rtype->name() == cdk::TYPE_INT) {
-      node->type(ltype);
-    } else if (rtype->name() == cdk::TYPE_UNSPEC) {
-      node->type(ltype);
-      node->rvalue()->type(ltype);
+    } 
+  } else if (node->lvalue()->is_typed(cdk::TYPE_DOUBLE)) {
+    if (node->rvalue()->is_typed(cdk::TYPE_DOUBLE) || node->rvalue()->is_typed(cdk::TYPE_INT)) {
+      node->type(cdk::primitive_type::create(8, cdk::TYPE_DOUBLE));
+    } else if (node->rvalue()->is_typed(cdk::TYPE_UNSPEC)) {
+      node->type(cdk::primitive_type::create(8, cdk::TYPE_DOUBLE));
+      node->rvalue()->type(cdk::primitive_type::create(8, cdk::TYPE_DOUBLE));
     } else {
       throw std::string("wrong assignment to real");
     }
-    return;
-  }
-
-  // STRING to STRING
-  if (ltype->name() == cdk::TYPE_STRING) {
-    if (rtype->name() == cdk::TYPE_STRING) {
-      node->type(ltype);
-    } else if (rtype->name() == cdk::TYPE_UNSPEC) {
-      node->type(ltype);
-      node->rvalue()->type(ltype);
+  } else if (node->lvalue()->is_typed(cdk::TYPE_STRING)) {
+    if (node->rvalue()->is_typed(cdk::TYPE_STRING)) {
+      node->type(cdk::primitive_type::create(4, cdk::TYPE_STRING));
+    } else if (node->rvalue()->is_typed(cdk::TYPE_UNSPEC)) {
+      node->type(cdk::primitive_type::create(4, cdk::TYPE_STRING));
+      node->rvalue()->type(cdk::primitive_type::create(4, cdk::TYPE_STRING));
     } else {
       throw std::string("wrong assignment to string");
     }
-    return;
-  }
-
-  // PTR<T> to PTR<T> or PTR<auto> (or nullptr)
-  if (ltype->name() == cdk::TYPE_POINTER) {
-    if (rtype->name() == cdk::TYPE_POINTER) {
-      auto lref = std::static_pointer_cast<cdk::reference_type>(ltype);
-      auto rref = std::static_pointer_cast<cdk::reference_type>(rtype);
-      //TODO: Rever pois sera que PTR<double> = PTR<int> ?
-      if (!lref->referenced() || !rref->referenced()) {
-        node->type(ltype);
-      } else if (lref->referenced()->name() == rref->referenced()->name()) {
-        node->type(ltype);
+  } else if (node->lvalue()->is_typed(cdk::TYPE_POINTER)){
+    if (node->rvalue()->is_typed(cdk::TYPE_POINTER)) {
+      auto lref = cdk::reference_type::cast(node->lvalue()->type());
+      auto rref = cdk::reference_type::cast(node->rvalue()->type());
+      if (rref->referenced()->name() == cdk::TYPE_UNSPEC) {
+        node->type(cdk::reference_type::create(4, lref->referenced()));
+        node->rvalue()->type(cdk::reference_type::create(4, lref->referenced()));
       } else {
-        throw std::string("incompatible pointer types in assignment");
+        node->type(node->rvalue()->type());
       }
-    } else if (rtype->name() == cdk::TYPE_UNSPEC) {
-      node->type(ltype);
-      node->rvalue()->type(ltype);
+    } else if (node->rvalue()->is_typed(cdk::TYPE_UNSPEC)) {
+        node->type(cdk::primitive_type::create(4, cdk::TYPE_POINTER));
+        node->rvalue()->type(cdk::primitive_type::create(4, cdk::TYPE_POINTER));
+    } else if (dynamic_cast<udf::nullptr_node*>(node->rvalue())) {
+      node->type(node->lvalue()->type());
     } else {
       throw std::string("wrong assignment to pointer");
     }
-    return;
-  }
-
-  // TENSOR to TENSOR (mesmo shape)
-  if (ltype->name() == cdk::TYPE_TENSOR) {
-    if (rtype->name() == cdk::TYPE_TENSOR) {
-      node->type(ltype);
-    } else if (rtype->name() == cdk::TYPE_UNSPEC) {
-      node->type(ltype);
-      node->rvalue()->type(ltype);
+  } else if (node->lvalue()->is_typed(cdk::TYPE_TENSOR)) {
+    if (node->rvalue()->is_typed(cdk::TYPE_TENSOR)) {
+      node->type(cdk::primitive_type::create(4, cdk::TYPE_TENSOR));
+    } else if (node->rvalue()->is_typed(cdk::TYPE_UNSPEC)) {
+      node->type(cdk::primitive_type::create(4, cdk::TYPE_TENSOR));
+      node->rvalue()->type(cdk::primitive_type::create(4, cdk::TYPE_TENSOR));
     } else {
       throw std::string("wrong assignment to tensor");
     }
-    return;
+  } else {
+     throw std::string("wrong types in assignment");
   }
-
-  throw std::string("wrong types in assignment");
 }
 
 //---------------------------------------------------------------------------
@@ -571,7 +528,7 @@ void udf::type_checker::do_objects_alloc_node(udf::objects_alloc_node *const nod
   if (!node->argument()->is_typed(cdk::TYPE_INT)) {
     throw std::string("integer expression expected in objects allocation");
   }
-  node->type(cdk::reference_type::create(4, nullptr));
+  node->type(cdk::reference_type::create(4, cdk::primitive_type::create(4, cdk::TYPE_UNSPEC)));
 }
 
 void udf::type_checker::do_function_call_node(udf::function_call_node *const node, int lvl) {

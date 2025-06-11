@@ -117,16 +117,18 @@ void udf::postfix_writer::do_add_node(cdk::add_node * const node, int lvl) {
   if (node->type()->name() == cdk::TYPE_DOUBLE && node->left()->type()->name() == cdk::TYPE_INT) {
     _pf.I2D();
   } else if (node->type()->name() == cdk::TYPE_POINTER && node->left()->type()->name() == cdk::TYPE_INT) {
-    _pf.INT(3);
-    _pf.SHTL();
+    auto ref = cdk::reference_type::cast(node->type());
+    _pf.INT(ref->referenced()->size());
+    _pf.MUL();
   }
 
   node->right()->accept(this, lvl + 2);
   if (node->type()->name() == cdk::TYPE_DOUBLE && node->right()->type()->name() == cdk::TYPE_INT) {
     _pf.I2D();
   } else if (node->type()->name() == cdk::TYPE_POINTER && node->right()->type()->name() == cdk::TYPE_INT) {
-    _pf.INT(3);
-    _pf.SHTL();
+    auto ref = cdk::reference_type::cast(node->type());
+    _pf.INT(ref->referenced()->size());
+    _pf.MUL();
   }
 
   if (node->type()->name() == cdk::TYPE_DOUBLE)
@@ -144,8 +146,9 @@ void udf::postfix_writer::do_sub_node(cdk::sub_node * const node, int lvl) {
   if (node->type()->name() == cdk::TYPE_DOUBLE && node->right()->type()->name() == cdk::TYPE_INT) {
     _pf.I2D();
   } else if (node->type()->name() == cdk::TYPE_POINTER && node->right()->type()->name() == cdk::TYPE_INT) {
-    _pf.INT(3);
-    _pf.SHTL();
+    auto ref = cdk::reference_type::cast(node->type());
+    _pf.INT(ref->referenced()->size());
+    _pf.MUL();
   }
 
   if (node->type()->name() == cdk::TYPE_DOUBLE)
@@ -153,6 +156,7 @@ void udf::postfix_writer::do_sub_node(cdk::sub_node * const node, int lvl) {
   else
     _pf.SUB();
 }
+
 void udf::postfix_writer::do_mul_node(cdk::mul_node * const node, int lvl) {
   ASSERT_SAFE_EXPRESSIONS;
   node->left()->accept(this, lvl + 2);
@@ -467,8 +471,10 @@ void udf::postfix_writer::do_index_node(udf::index_node * const node, int lvl) {
 void udf::postfix_writer::do_objects_alloc_node(udf::objects_alloc_node * const node, int lvl) {
   ASSERT_SAFE_EXPRESSIONS;
   node->argument()->accept(this, lvl);
-  _pf.INT(3);
-  _pf.SHTL();
+  auto pointed = cdk::reference_type::cast(node->type())->referenced();
+  size_t size = pointed->size();
+  _pf.INT(size);
+  _pf.MUL();
   _pf.ALLOC(); // allocate
   _pf.SP(); // put base pointer in stack
 }
