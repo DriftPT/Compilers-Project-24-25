@@ -795,16 +795,16 @@ void udf::postfix_writer::do_tensor_capacity_node(udf::tensor_capacity_node * co
 
 void udf::postfix_writer::do_tensor_dim_node(udf::tensor_dim_node * const node, int lvl) {
   node->tensor()->accept(this, lvl + 2);
-  _functions_to_declare.insert("tensor_dims");
-  _pf.CALL("tensor_dims");
+  _functions_to_declare.insert("tensor_get_dim_size");
+  _pf.CALL("tensor_get_dim_size");
   _pf.TRASH(4); // remove argument (pointer to tensor)
   _pf.LDFVAL32(); // return value is a pointer to an array of dimensions
 }
 
 void udf::postfix_writer::do_tensor_dims_node(udf::tensor_dims_node * const node, int lvl) {
   node->tensor()->accept(this, lvl + 2);
-  _functions_to_declare.insert("tensor_get_dim_size");
-  _pf.CALL("tensor_get_dim_size");
+  _functions_to_declare.insert("tensor_get_dims");
+  _pf.CALL("tensor_get_dims");
   _pf.TRASH(4); // remove argument (pointer to tensor)
   _pf.LDFVAL32(); // return value is a pointer to an array of dimensions
 }
