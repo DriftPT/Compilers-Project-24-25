@@ -1,6 +1,6 @@
 #include <string>
 #include <sstream>
-#include <memory>
+//#include <memory> TODO: check if needed
 #include <cdk/types/types.h>
 #include "targets/type_checker.h"
 #include "targets/postfix_writer.h"
@@ -325,6 +325,10 @@ void udf::postfix_writer::do_print_node(udf::print_node * const node, int lvl) {
       _functions_to_declare.insert("prints");
       _pf.CALL("prints");
       _pf.TRASH(4); // trash char pointer
+    } else if (etype->name() == cdk::TYPE_TENSOR) {
+      _functions_to_declare.insert("tensor_print");
+      _pf.CALL("tensor_print");
+      _pf.TRASH(4); // trash pointer to tensor
     } else {
       std::cerr << "cannot print expression of unknown type" << std::endl;
       return;
@@ -540,6 +544,11 @@ void udf::postfix_writer::do_function_definition_node(udf::function_definition_n
   if (node->qualifier() == tPUBLIC) _pf.GLOBAL(_function->name(), _pf.FUNC());
   _pf.LABEL(_function->name());
 
+  if (node->identifier() == "udf") { // ou "_main"
+    _functions_to_declare.insert("mem_init");
+    _pf.CALL("mem_init");
+  }
+
   // compute stack size to be reserved for local variables
   frame_size_calculator lsc(_compiler, _symtab, _function);
   node->accept(&lsc, lvl);
@@ -711,7 +720,23 @@ void udf::postfix_writer::do_tensor_rank_node(udf::tensor_rank_node * const node
 }
 
 void udf::postfix_writer::do_tensor_node(udf::tensor_node * const node, int lvl) {
-  //TODO
+  // 1. Determina a shape do tensor
+  auto tensor_type = std::dynamic_pointer_cast<cdk::tensor_type>(node->type());
+  const auto &dims = tensor_type->dims();
+
+   // Empilha as dimensões da última para a primeira
+  for (auto it = dims.rbegin(); it != dims.rend(); ++it) {
+    _pf.INT(*it);
+    std::cout << "Pushed to stack: " << *it << std::endl;
+  }
+  // Depois empilha o número de dimensões
+  _pf.INT(dims.size());
+  std::cout << "Pushed to stack: " << dims.size() << std::endl;
+  // 3. Chama tensor_create
+  _functions_to_declare.insert("tensor_create");
+  _pf.CALL("tensor_create");
+  _pf.TRASH(4 * (dims.size() + 1)); // remove argumentos
+  _pf.LDFVAL32();
 }
 
 void udf::postfix_writer::do_tensor_contraction_node(udf::tensor_contraction_node * const node, int lvl) {
