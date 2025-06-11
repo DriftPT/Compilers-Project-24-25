@@ -765,7 +765,13 @@ void udf::postfix_writer::do_tensor_node(udf::tensor_node * const node, int lvl)
 }
 
 void udf::postfix_writer::do_tensor_contraction_node(udf::tensor_contraction_node * const node, int lvl) {
-  //TODO
+  ASSERT_SAFE_EXPRESSIONS;
+  node->tensor2()->accept(this, lvl + 2);
+  node->tensor1()->accept(this, lvl + 2);
+  _functions_to_declare.insert("tensor_matmul");
+  _pf.CALL("tensor_matmul");
+  _pf.TRASH(8); // remove arguments (2 pointers to tensors)
+  _pf.LDFVAL32();
 }
 
 void udf::postfix_writer::do_tensor_capacity_node(udf::tensor_capacity_node * const node, int lvl) {
