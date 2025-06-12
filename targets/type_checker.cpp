@@ -770,7 +770,7 @@ void udf::type_checker::do_tensor_index_node(udf::tensor_index_node *const node,
     if (!expr || !expr->is_typed(cdk::TYPE_INT))
       throw std::string("tensor indices must be integer expressions");
   }
-  node->type(cdk::primitive_type::create(4, cdk::TYPE_INT));
+  node->type(cdk::primitive_type::create(8, cdk::TYPE_DOUBLE));
 }
 
 void udf::type_checker::do_tensor_rank_node(udf::tensor_rank_node *const node, int lvl) {

@@ -26,6 +26,7 @@ namespace udf {
     std::shared_ptr<udf::symbol> _function; // for keeping track of the current function and its arguments
     int _offset; // current framepointer offset (0 means no vars defined)
     cdk::typename_type _lvalueType;
+    bool _in_lvalue;
 
     // remember function name for resolving '@'
     std::string _currentFunctionName;
@@ -39,7 +40,7 @@ namespace udf {
     postfix_writer(std::shared_ptr<cdk::compiler> compiler, cdk::symbol_table<udf::symbol> &symtab, cdk::basic_postfix_emitter &pf) :
         basic_ast_visitor(compiler), _symtab(symtab), _errors(false), _inFunction(false), _inFunctionName(false), _inFunctionArgs(
             false), _inFunctionBody(false), _inForInit(false), _returnSeen(false), _function(nullptr), _offset(0), _lvalueType(
-            cdk::TYPE_VOID), _currentFunctionName(""), _currentBodyRetLabel(""), _pf(pf), _lbl(0) {
+            cdk::TYPE_VOID), _in_lvalue(false), _currentFunctionName(""), _currentBodyRetLabel(""), _pf(pf), _lbl(0) {
     }
 
 
