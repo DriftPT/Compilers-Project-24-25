@@ -163,7 +163,6 @@ void udf::type_checker::processAdditiveExpression(cdk::binary_operation_node *co
         return;
       }
     }
-    // Handle tensor - tensor for sub_node (coefficient-wise subtraction)
     if (node->left()->is_typed(cdk::TYPE_TENSOR) && node->right()->is_typed(cdk::TYPE_TENSOR)) {
       auto ltype = cdk::tensor_type::cast(node->left()->type());
       auto rtype = cdk::tensor_type::cast(node->right()->type());
@@ -174,7 +173,6 @@ void udf::type_checker::processAdditiveExpression(cdk::binary_operation_node *co
       node->type(ltype);
       return;
     }
-    // Handle tensor - scalar and scalar - tensor for sub_node as well
     if (node->left()->is_typed(cdk::TYPE_TENSOR) &&
       (node->right()->is_typed(cdk::TYPE_INT) || node->right()->is_typed(cdk::TYPE_DOUBLE))) {
       node->type(node->left()->type());
@@ -313,7 +311,7 @@ void udf::type_checker::do_gt_node(cdk::gt_node *const node, int lvl) {
 
 //---------------------------------------------------------------------------
 
-//Function aux for verify tensor_node shape
+//Function aux to verify tensor_node shape
 static std::vector<size_t> infer_tensor_shape(const udf::tensor_node *node) {
   std::vector<size_t> shape;
   const udf::tensor_node *current = node;
@@ -436,7 +434,6 @@ void udf::type_checker::do_input_node(udf::input_node *const node, int lvl) {
 //---------------------------------------------------------------------------
 
 void udf::type_checker::do_for_node(udf::for_node *const node, int lvl) {
-  //TODO: rever
    _symtab.push();
   if (node->init()) {
     node->init()->accept(this, lvl + 2);
@@ -587,18 +584,6 @@ void udf::type_checker::do_function_call_node(udf::function_call_node *const nod
   if (!symbol) throw std::string("symbol '" + id + "' is undeclared.");
   if (!symbol->isFunction()) throw std::string("symbol '" + id + "' is not a function.");
   
-  /*
-  TODO:??
-  if (symbol->is_typed(cdk::TYPE_STRUCT)) {
-    // declare return variable for passing to function call
-    const std::string return_var_name = "$return_" + id;
-    auto return_symbol = udf::make_symbol(false, symbol->qualifier(), symbol->type(), return_var_name, false, false);
-    if (_symtab.insert(return_var_name, return_symbol)) {
-    } else {
-      // if already declared, ignore new insertion
-    }
-  }
-  */
   node->type(symbol->type());
 
   if (node->arguments()->size() == symbol->number_of_arguments()) {
