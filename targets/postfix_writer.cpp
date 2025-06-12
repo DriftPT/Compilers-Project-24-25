@@ -316,7 +316,7 @@ void udf::postfix_writer::do_lt_node(cdk::lt_node * const node, int lvl) {
   if (node->left()->type()->name() == cdk::TYPE_INT && node->right()->type()->name() == cdk::TYPE_DOUBLE) _pf.I2D();
 
   node->right()->accept(this, lvl + 2);
-  if (node->right()->type()->name() == cdk::TYPE_INT && node->right()->type()->name() == cdk::TYPE_DOUBLE) _pf.I2D();
+  if (node->left()->type()->name() == cdk::TYPE_DOUBLE && node->right()->type()->name() == cdk::TYPE_INT) _pf.I2D();
 
   if (node->left()->is_typed(cdk::TYPE_DOUBLE) || node->right()->is_typed(cdk::TYPE_DOUBLE)) {
     _pf.DCMP();
@@ -332,7 +332,12 @@ void udf::postfix_writer::do_le_node(cdk::le_node * const node, int lvl) {
   if (node->left()->type()->name() == cdk::TYPE_INT && node->right()->type()->name() == cdk::TYPE_DOUBLE) _pf.I2D();
 
   node->right()->accept(this, lvl + 2);
-  if (node->right()->type()->name() == cdk::TYPE_INT && node->right()->type()->name() == cdk::TYPE_DOUBLE) _pf.I2D();
+  if (node->left()->type()->name() == cdk::TYPE_DOUBLE && node->right()->type()->name() == cdk::TYPE_INT) _pf.I2D();
+
+  if (node->left()->is_typed(cdk::TYPE_DOUBLE) || node->right()->is_typed(cdk::TYPE_DOUBLE)) {
+    _pf.DCMP();
+    _pf.INT(0);
+  }
 
   _pf.LE();
 }
@@ -342,7 +347,12 @@ void udf::postfix_writer::do_ge_node(cdk::ge_node * const node, int lvl) {
   if (node->left()->type()->name() == cdk::TYPE_INT && node->right()->type()->name() == cdk::TYPE_DOUBLE) _pf.I2D();
 
   node->right()->accept(this, lvl + 2);
-  if (node->right()->type()->name() == cdk::TYPE_INT && node->right()->type()->name() == cdk::TYPE_DOUBLE) _pf.I2D();
+  if (node->left()->type()->name() == cdk::TYPE_DOUBLE && node->right()->type()->name() == cdk::TYPE_INT) _pf.I2D();
+
+  if (node->left()->is_typed(cdk::TYPE_DOUBLE) || node->right()->is_typed(cdk::TYPE_DOUBLE)) {
+    _pf.DCMP();
+    _pf.INT(0);
+  }
 
   _pf.GE();
 }
@@ -361,6 +371,7 @@ void udf::postfix_writer::do_gt_node(cdk::gt_node * const node, int lvl) {
 
   _pf.GT();
 }
+
 void udf::postfix_writer::do_ne_node(cdk::ne_node * const node, int lvl) {
   ASSERT_SAFE_EXPRESSIONS;
 
@@ -382,7 +393,7 @@ void udf::postfix_writer::do_ne_node(cdk::ne_node * const node, int lvl) {
   if (node->left()->type()->name() == cdk::TYPE_INT && node->right()->type()->name() == cdk::TYPE_DOUBLE) _pf.I2D();
 
   node->right()->accept(this, lvl + 2);
-  if (node->right()->type()->name() == cdk::TYPE_INT && node->right()->type()->name() == cdk::TYPE_DOUBLE) _pf.I2D();
+  if (node->left()->type()->name() == cdk::TYPE_DOUBLE && node->right()->type()->name() == cdk::TYPE_INT) _pf.I2D();
 
   _pf.NE();
 }
@@ -406,7 +417,7 @@ void udf::postfix_writer::do_eq_node(cdk::eq_node * const node, int lvl) {
   if (node->left()->type()->name() == cdk::TYPE_INT && node->right()->type()->name() == cdk::TYPE_DOUBLE) _pf.I2D();
 
   node->right()->accept(this, lvl + 2);
-  if (node->right()->type()->name() == cdk::TYPE_INT && node->right()->type()->name() == cdk::TYPE_DOUBLE) _pf.I2D();
+  if (node->left()->type()->name() == cdk::TYPE_INT && node->right()->type()->name() == cdk::TYPE_DOUBLE) _pf.I2D();
 
   _pf.EQ();
 }
@@ -885,7 +896,10 @@ void udf::postfix_writer::do_tensor_index_node(udf::tensor_index_node * const no
 void udf::postfix_writer::do_tensor_rank_node(udf::tensor_rank_node * const node, int lvl) {
   ASSERT_SAFE_EXPRESSIONS;
   node->tensor()->accept(this, lvl);
-  _pf.LDINT();
+  _functions_to_declare.insert("tensor_get_n_dims");
+  _pf.CALL("tensor_get_n_dims");
+  _pf.TRASH(4);
+  _pf.LDFVAL32();
 }
 
 void udf::postfix_writer::do_tensor_node(udf::tensor_node * const node, int lvl) {
@@ -955,7 +969,7 @@ void udf::postfix_writer::do_tensor_dim_node(udf::tensor_dim_node * const node, 
   node->tensor()->accept(this, lvl + 2);
   _functions_to_declare.insert("tensor_get_dim_size");
   _pf.CALL("tensor_get_dim_size");
-  _pf.TRASH(4);
+  _pf.TRASH(8);
   _pf.LDFVAL32();
 }
 
