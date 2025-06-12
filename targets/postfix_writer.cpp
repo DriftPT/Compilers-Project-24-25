@@ -395,6 +395,11 @@ void udf::postfix_writer::do_ne_node(cdk::ne_node * const node, int lvl) {
   node->right()->accept(this, lvl + 2);
   if (node->left()->type()->name() == cdk::TYPE_DOUBLE && node->right()->type()->name() == cdk::TYPE_INT) _pf.I2D();
 
+  if (node->left()->is_typed(cdk::TYPE_DOUBLE) || node->right()->is_typed(cdk::TYPE_DOUBLE)) {
+    _pf.DCMP();
+    _pf.INT(0);
+  }
+
   _pf.NE();
 }
 void udf::postfix_writer::do_eq_node(cdk::eq_node * const node, int lvl) {
@@ -417,7 +422,12 @@ void udf::postfix_writer::do_eq_node(cdk::eq_node * const node, int lvl) {
   if (node->left()->type()->name() == cdk::TYPE_INT && node->right()->type()->name() == cdk::TYPE_DOUBLE) _pf.I2D();
 
   node->right()->accept(this, lvl + 2);
-  if (node->left()->type()->name() == cdk::TYPE_INT && node->right()->type()->name() == cdk::TYPE_DOUBLE) _pf.I2D();
+  if (node->left()->type()->name() == cdk::TYPE_DOUBLE && node->right()->type()->name() == cdk::TYPE_INT) _pf.I2D();
+
+  if (node->left()->is_typed(cdk::TYPE_DOUBLE) || node->right()->is_typed(cdk::TYPE_DOUBLE)) {
+    _pf.DCMP();
+    _pf.INT(0);
+  }
 
   _pf.EQ();
 }
