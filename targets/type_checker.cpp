@@ -395,8 +395,6 @@ void udf::type_checker::do_assignment_node(cdk::assignment_node *const node, int
     } else if (node->rvalue()->is_typed(cdk::TYPE_UNSPEC)) {
         node->type(cdk::primitive_type::create(4, cdk::TYPE_POINTER));
         node->rvalue()->type(cdk::primitive_type::create(4, cdk::TYPE_POINTER));
-    } else if (dynamic_cast<udf::nullptr_node*>(node->rvalue())) {
-      node->type(node->lvalue()->type());
     } else {
       throw std::string("wrong assignment to pointer");
     }
