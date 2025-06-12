@@ -796,12 +796,23 @@ void udf::postfix_writer::do_variable_declaration_node(udf::variable_declaration
           _pf.I2D();
         _pf.LOCAL(symbol->offset());
         _pf.STDOUBLE();
-      } else if (node->is_typed(cdk::TYPE_TENSOR)) {
-        _pf.LOCAL(symbol->offset());
-        _pf.STINT();
-
       } else {
         std::cerr << "cannot initialize" << std::endl;
+      }
+    } else {
+      if (node->is_typed(cdk::TYPE_TENSOR)) {
+        auto tensor_type = cdk::tensor_type::cast(node->type());
+        for (int i = tensor_type->n_dims() - 1; i >= 0; i--) {
+          size_t dim = tensor_type->dim(i);
+          _pf.INT(dim);
+        }
+        _pf.INT(tensor_type->n_dims());
+        _functions_to_declare.insert("tensor_zeros");
+        _pf.CALL("tensor_zeros");
+        _pf.TRASH((tensor_type->n_dims() + 1) * 4);
+        _pf.LDFVAL32();
+        _pf.LOCAL(symbol->offset());
+        _pf.STINT();
       }
     }
   } else {
